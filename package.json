@@ -1,0 +1,22 @@
+{
+  "name": "tcs-aptitude-exam-simulator",
+  "private": true,
+  "workspaces": [
+    "frontend",
+    "backend"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev -w backend\" \"npm run dev -w frontend\"",
+    "dev:tunnel": "concurrently \"npm run dev -w backend\" \"npm run dev -w frontend -- --host 0.0.0.0\"",
+    "build": "npm run build -w backend && npm run build -w frontend",
+    "start": "npm run start -w backend",
+    "test": "npm run test -w backend && npm run test -w frontend",
+    "samples": "node scripts/generate-samples.mjs"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2",
+    "docx": "^9.5.1",
+    "pdfkit": "^0.17.1",
+    "pptxgenjs": "^4.0.1"
+  }
+}
