@@ -1,4 +1,4 @@
-import type { AnswerRecord, AttemptSummary, PublicExam, QuestionReview } from "../types/exam";
+import type { AnswerRecord, AttemptSummary, PublicExam, PublicExamSummary, QuestionReview } from "../types/exam";
 
 async function readJson<T>(response: Response): Promise<T> {
   const data = (await response.json()) as unknown;
@@ -12,11 +12,17 @@ export async function getPublicExam(code: string): Promise<PublicExam> {
   return readJson<PublicExam>(response);
 }
 
-export async function submitAttempt(code: string, studentName: string, answers: AnswerRecord[]): Promise<{ attempt: AttemptSummary; review: QuestionReview[] }> {
+export async function getAvailableExams(): Promise<PublicExamSummary[]> {
+  const response = await fetch("/api/exams");
+  const data = await readJson<{ exams: PublicExamSummary[] }>(response);
+  return data.exams;
+}
+
+export async function submitAttempt(code: string, token: string, answers: AnswerRecord[]): Promise<{ attempt: AttemptSummary; review: QuestionReview[] }> {
   const response = await fetch(`/api/exams/${code}/attempts`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ studentName, answers }),
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ answers }),
   });
   const data = await readJson<{ message: string; attempt: AttemptSummary; review: QuestionReview[] }>(response);
   return { attempt: data.attempt, review: data.review };

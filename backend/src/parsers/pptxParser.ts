@@ -14,9 +14,16 @@ function collectText(node: XmlNode | undefined, output: string[]): void {
     return;
   }
   Object.entries(node).forEach(([key, value]) => {
-    if (key === "a:t") collectText(value, output);
+    if (key === "a:t" || key === "t") collectText(value, output);
     else if (key !== "$") collectText(value, output);
   });
+}
+
+async function extractXmlText(xml: string): Promise<string> {
+  const parsed = (await parseStringPromise(xml)) as XmlNode;
+  const parts: string[] = [];
+  collectText(parsed, parts);
+  return parts.join("\n");
 }
 
 export async function parsePptx(buffer: Buffer): Promise<string> {
@@ -25,14 +32,23 @@ export async function parsePptx(buffer: Buffer): Promise<string> {
     .getEntries()
     .filter((entry) => /^ppt\/slides\/slide\d+\.xml$/.test(entry.entryName))
     .sort((a, b) => a.entryName.localeCompare(b.entryName, undefined, { numeric: true }));
+  const notes = zip
+    .getEntries()
+    .filter((entry) => /^ppt\/notesSlides\/notesSlide\d+\.xml$/.test(entry.entryName))
+    .sort((a, b) => a.entryName.localeCompare(b.entryName, undefined, { numeric: true }));
 
   const slideTexts: string[] = [];
   for (const slide of slides) {
-    const parsed = (await parseStringPromise(slide.getData().toString("utf8"))) as XmlNode;
-    const parts: string[] = [];
-    collectText(parsed, parts);
-    slideTexts.push(parts.join("\n"));
+    const text = await extractXmlText(slide.getData().toString("utf8"));
+    slideTexts.push(text);
   }
 
-  return slideTexts.join("\n\n");
+  for (const note of notes) {
+    const text = await extractXmlText(note.getData().toString("utf8"));
+    if (text.trim()) slideTexts.push(text);
+  }
+
+  return slideTexts
+    .map((text, index) => `<<SLIDE ${index + 1}>>\n${text}`)
+    .join("\n\n");
 }

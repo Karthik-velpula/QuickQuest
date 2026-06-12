@@ -1,4 +1,4 @@
-import type { AdminExamSummary } from "../types/exam";
+import type { AdminExamListSummary, AdminExamSummary } from "../types/exam";
 import type { Question } from "../types/exam";
 
 const API = "/api";
@@ -50,4 +50,18 @@ export async function previewQuestionFile(token: string, file: File): Promise<Qu
 export async function getAdminExam(token: string, code: string): Promise<AdminExamSummary> {
   const response = await fetch(`${API}/admin/exams/${code}`, { headers: { Authorization: `Bearer ${token}` } });
   return readJson<AdminExamSummary>(response);
+}
+
+export async function getAdminExams(token: string): Promise<AdminExamListSummary[]> {
+  const response = await fetch(`${API}/admin/exams`, { headers: { Authorization: `Bearer ${token}` } });
+  const data = await readJson<{ exams: AdminExamListSummary[] }>(response);
+  return data.exams;
+}
+
+export async function deleteAdminExam(token: string, code: string): Promise<void> {
+  const response = await fetch(`${API}/admin/exams/${code}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  await readJson<{ message: string }>(response);
 }

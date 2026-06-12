@@ -1,5 +1,6 @@
 export interface Question {
   id: string;
+  questionNumber?: number;
   question: string;
   options: string[];
 }
@@ -8,6 +9,27 @@ export interface PublicExam {
   code: string;
   title: string;
   questions: Question[];
+}
+
+export interface PublicExamSummary {
+  code: string;
+  title: string;
+  questionCount: number;
+  createdAt: string;
+}
+
+export interface AdminExamListSummary extends PublicExamSummary {
+  attemptCount: number;
+}
+
+export interface StudentProfile {
+  username: string;
+  displayName: string;
+}
+
+export interface StudentSession {
+  token: string;
+  student: StudentProfile;
 }
 
 export interface AnswerRecord {
@@ -29,6 +51,7 @@ export interface AttemptSummary {
 
 export interface QuestionReview {
   questionId: string;
+  questionNumber?: number;
   question: string;
   options: string[];
   selectedAnswer: string | null;

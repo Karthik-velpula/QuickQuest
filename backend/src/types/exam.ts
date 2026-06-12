@@ -7,8 +7,20 @@ export interface StoredQuestion extends Question {
 
 export interface PublicQuestion {
   id: string;
+  questionNumber?: number;
   question: string;
   options: string[];
+}
+
+export interface PublicExamSummary {
+  code: string;
+  title: string;
+  questionCount: number;
+  createdAt: string;
+}
+
+export interface AdminExamListSummary extends PublicExamSummary {
+  attemptCount: number;
 }
 
 export interface Exam {

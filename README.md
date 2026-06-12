@@ -59,11 +59,20 @@ Production environment variables:
 ```text
 ADMIN_USER=your-admin-name
 ADMIN_PASSWORD=your-strong-password
-DATA_FILE=/var/data/exams.json
+MYSQL_HOST=your-mysql-host
+MYSQL_PORT=3306
+MYSQL_USER=your-mysql-user
+MYSQL_PASSWORD=your-mysql-password
+MYSQL_DATABASE=quickquest
 PORT=4000
 ```
 
-`DATA_FILE` stores exams, answer keys, attempts, scores, and question reviews. Use a persistent disk in production so this file survives restarts.
+The backend creates and uses these MySQL tables on startup:
+
+- `exams`
+- `exam_questions`
+- `exam_attempts`
+- `attempt_answers`
 
 ### Render Deployment
 
@@ -72,7 +81,7 @@ This repo includes `render.yaml`.
 1. Push the project to GitHub.
 2. Create a Render account.
 3. New → Blueprint → select the GitHub repo.
-4. Set `ADMIN_USER` and `ADMIN_PASSWORD` in Render.
+4. Set `ADMIN_USER`, `ADMIN_PASSWORD`, and the MySQL environment variables in Render.
 5. Deploy.
 
 Render will run:
@@ -80,12 +89,6 @@ Render will run:
 ```bash
 npm install && npm run build
 npm start
-```
-
-The included Render disk stores data at:
-
-```text
-/var/data/exams.json
 ```
 
 After deploy, use:
@@ -139,7 +142,7 @@ Run `npm run samples` to generate:
 ## Behavior
 
 - Uploads are held in Multer memory storage and are never written to disk.
-- Admin-created exams, answer keys, and attempts are stored only in server memory.
+- Admin-created exams, answer keys, and attempts are stored in MySQL.
 - Student answers are submitted to the backend and scored for both the admin attempt table and the student's final screen.
 - No database, browser storage, cookies, or result exports are used.
 - Restarting the backend permanently clears all exams, links, answer keys, and attempts.

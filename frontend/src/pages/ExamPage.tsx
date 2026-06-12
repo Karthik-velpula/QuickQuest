@@ -48,23 +48,25 @@ export function ExamPage({ questions, onComplete }: ExamPageProps) {
   return (
     <div className="flex min-h-screen flex-col bg-canvas">
       {fullscreenWarning && <FullscreenWarning onRestore={() => void restoreFullscreen()} />}
-      <header className="flex items-center justify-between border-b border-slate-200 bg-white px-8 py-4">
+      <header className="flex flex-col gap-4 border-b border-slate-200 bg-white px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-8">
         <div>
-          <p className="text-xs font-bold uppercase tracking-widest text-slate-500">Quantitative Aptitude</p>
+          <p className="text-xs font-bold uppercase tracking-widest text-slate-500">Online Examination</p>
           <p className="mt-1 text-lg font-bold text-navy">Question {index + 1} of {questions.length}</p>
+          <p className="mt-1 text-xs font-bold uppercase tracking-wider text-teal">Document Q{question.questionNumber ?? index + 1}</p>
         </div>
         <Timer seconds={seconds} />
       </header>
       <ProgressBar current={index + 1} total={questions.length} />
-      <main className="grid flex-1 place-items-center px-6 py-10">
-        <section className="w-full max-w-4xl rounded-2xl bg-white p-8 shadow-panel md:p-12">
+      <main className="grid flex-1 place-items-center px-4 py-6 sm:px-6 sm:py-10">
+        <section className="w-full max-w-4xl rounded-2xl bg-white p-5 shadow-panel sm:p-8 md:p-12">
           <p className="text-xs font-bold uppercase tracking-[0.2em] text-teal">Select one option</p>
-          <h2 className="mt-5 text-2xl font-semibold leading-relaxed text-navy md:text-3xl">{question.question}</h2>
+          <p className="mt-3 w-fit rounded-full bg-teal/10 px-3 py-1 text-xs font-bold text-teal">Document Question {question.questionNumber ?? index + 1}</p>
+          <h2 className="mt-5 text-xl font-semibold leading-relaxed text-navy sm:text-2xl md:text-3xl">{question.question}</h2>
           <div className="mt-9 grid gap-4">
             {question.options.map((option, optionIndex) => (
               <label
                 key={option}
-                className={`flex cursor-pointer items-center gap-4 rounded-xl border-2 p-5 transition ${
+                className={`flex cursor-pointer items-start gap-3 rounded-xl border-2 p-4 transition sm:items-center sm:gap-4 sm:p-5 ${
                   selected === option ? "border-teal bg-teal/5" : "border-slate-200 hover:border-slate-300"
                 }`}
               >
@@ -76,7 +78,7 @@ export function ExamPage({ questions, onComplete }: ExamPageProps) {
               </label>
             ))}
           </div>
-          <div className="mt-8 flex items-center justify-between gap-4">
+          <div className="mt-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">You can only move forward</p>
             <button onClick={goForward} className="rounded-lg bg-teal px-6 py-3 font-bold text-white hover:bg-teal/90">
               {index === questions.length - 1 ? "Submit Exam" : "Next Question"}

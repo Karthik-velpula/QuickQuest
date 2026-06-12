@@ -34,7 +34,7 @@ export function UploadPage({ onReady }: UploadPageProps) {
         <div className="grid gap-10 lg:grid-cols-[1.1fr_0.9fr]">
           <section>
             <p className="text-sm font-bold uppercase tracking-[0.2em] text-teal">Assessment setup</p>
-            <h2 className="mt-3 text-4xl font-bold leading-tight text-navy">Create a strictly timed aptitude examination.</h2>
+            <h2 className="mt-3 text-4xl font-bold leading-tight text-navy">Create a strictly timed online examination.</h2>
             <p className="mt-5 max-w-xl text-lg leading-8 text-slate-600">
               Upload a formatted question document. Questions and options are randomized before the assessment begins.
             </p>

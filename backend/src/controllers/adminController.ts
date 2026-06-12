@@ -1,6 +1,6 @@
 import type { Request, Response } from "express";
 import { login } from "../services/authService.js";
-import { createExam, getExam } from "../services/examStore.js";
+import { createExam, deleteExam, getExam, listAdminExams } from "../services/examStore.js";
 import { extractText, hasValidSignature } from "../services/fileTextExtractor.js";
 import { extractQuestions } from "../services/questionExtractor.js";
 
@@ -47,7 +47,7 @@ export async function createExamFromUpload(request: Request, response: Response)
     return;
   }
 
-  const { title = "Aptitude Assessment", answerKey = "" } = request.body as { title?: string; answerKey?: string };
+  const { title = "Online Assessment", answerKey = "" } = request.body as { title?: string; answerKey?: string };
   try {
     const text = await extractText(request.file);
     const questions = extractQuestions(text);
@@ -56,7 +56,7 @@ export async function createExamFromUpload(request: Request, response: Response)
       return;
     }
 
-    const exam = createExam(title, questions, answerKey);
+    const exam = await createExam(title, questions, answerKey);
     response.status(201).json({
       code: exam.code,
       title: exam.title,
@@ -68,8 +68,8 @@ export async function createExamFromUpload(request: Request, response: Response)
   }
 }
 
-export function getAdminExam(request: Request, response: Response): void {
-  const exam = getExam(String(request.params.code ?? ""));
+export async function getAdminExam(request: Request, response: Response): Promise<void> {
+  const exam = await getExam(String(request.params.code ?? ""));
   if (!exam) {
     response.status(404).json({ message: "Exam not found or expired." });
     return;
@@ -81,4 +81,17 @@ export function getAdminExam(request: Request, response: Response): void {
     createdAt: exam.createdAt,
     attempts: exam.attempts,
   });
+}
+
+export async function listAdminCreatedExams(_request: Request, response: Response): Promise<void> {
+  response.json({ exams: await listAdminExams() });
+}
+
+export async function deleteAdminExam(request: Request, response: Response): Promise<void> {
+  const deleted = await deleteExam(String(request.params.code ?? ""));
+  if (!deleted) {
+    response.status(404).json({ message: "Exam not found." });
+    return;
+  }
+  response.json({ message: "Exam deleted." });
 }

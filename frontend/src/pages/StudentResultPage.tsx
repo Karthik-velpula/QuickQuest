@@ -18,17 +18,17 @@ export function StudentResultPage({ result, review, onDone }: StudentResultPageP
   ];
 
   return (
-    <div className="min-h-screen bg-canvas px-6 py-12">
+    <div className="min-h-screen bg-canvas px-4 py-8 sm:px-6 sm:py-12">
       <main className="mx-auto max-w-4xl overflow-hidden rounded-2xl bg-white shadow-panel">
-        <section className="bg-navy px-8 py-10 text-white">
+        <section className="bg-navy px-5 py-8 text-white sm:px-8 sm:py-10">
           <p className="text-xs font-bold uppercase tracking-[0.24em] text-teal-300">Exam submitted</p>
-          <h1 className="mt-3 text-3xl font-bold">Your result</h1>
+          <h1 className="mt-3 text-2xl font-bold sm:text-3xl">Your result</h1>
           <p className="mt-2 text-sm text-slate-300">Student: {result.studentName}</p>
         </section>
-        <section className="grid gap-8 p-8 md:grid-cols-[0.8fr_1.2fr]">
-          <div className="grid place-items-center rounded-2xl bg-teal/5 p-8 text-center">
+        <section className="grid gap-6 p-5 sm:gap-8 sm:p-8 md:grid-cols-[0.8fr_1.2fr]">
+          <div className="grid place-items-center rounded-2xl bg-teal/5 p-6 text-center sm:p-8">
             <div>
-              <p className="text-6xl font-bold text-teal">{result.percentage}%</p>
+              <p className="text-5xl font-bold text-teal sm:text-6xl">{result.percentage}%</p>
               <p className="mt-2 text-sm font-bold uppercase tracking-widest text-slate-500">Percentage</p>
             </div>
           </div>
@@ -41,16 +41,19 @@ export function StudentResultPage({ result, review, onDone }: StudentResultPageP
             ))}
           </div>
         </section>
-        <section className="border-t border-slate-200 p-8">
-          <h2 className="text-2xl font-bold text-navy">Review wrong and unanswered questions</h2>
+        <section className="border-t border-slate-200 p-5 sm:p-8">
+          <h2 className="text-xl font-bold text-navy sm:text-2xl">Review wrong and unanswered questions</h2>
           {reviewItems.length === 0 ? (
             <p className="mt-4 rounded-xl bg-teal/10 p-4 font-semibold text-teal">Great work. No wrong or unanswered questions.</p>
           ) : (
             <div className="mt-5 grid gap-4">
               {reviewItems.map((item, index) => (
-                <article key={item.questionId} className="rounded-xl border border-slate-200 p-5">
-                  <div className="flex items-start justify-between gap-4">
-                    <h3 className="font-bold leading-7 text-navy">Q{index + 1}. {item.question}</h3>
+                <article key={item.questionId} className="rounded-xl border border-slate-200 p-4 sm:p-5">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                    <div>
+                      <p className="text-xs font-bold uppercase tracking-[0.18em] text-teal">Document Q{item.questionNumber ?? index + 1}</p>
+                      <h3 className="mt-2 font-bold leading-7 text-navy">Q{index + 1}. {item.question}</h3>
+                    </div>
                     <span className={`rounded-full px-3 py-1 text-xs font-bold uppercase ${item.status === "wrong" ? "bg-red-50 text-red-700" : "bg-amber-50 text-amber-700"}`}>
                       {item.status}
                     </span>
@@ -79,7 +82,7 @@ export function StudentResultPage({ result, review, onDone }: StudentResultPageP
             </div>
           )}
         </section>
-        <section className="border-t border-slate-200 p-8">
+        <section className="border-t border-slate-200 p-5 sm:p-8">
           <button onClick={onDone} className="rounded-lg bg-teal px-6 py-3 font-bold text-white hover:bg-teal/90">
             Finish
           </button>

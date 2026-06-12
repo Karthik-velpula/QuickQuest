@@ -1,0 +1,6 @@
+{
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "https://quickquest-5k5x.onrender.com/api/$1" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}
