@@ -18,7 +18,17 @@ export async function registerStudentAccount(request: Request, response: Respons
     const student = await registerStudent(username, password, displayName);
     await sendStudentSession(response, student);
   } catch (error) {
-    response.status(400).json({ message: error instanceof Error ? error.message : "Unable to create student account." });
+    const message = error instanceof Error ? error.message : "Unable to create student account.";
+    if (message === "Username already exists. Please login or choose another username.") {
+      const existing = await loginStudent(username, password);
+      if (existing) {
+        await sendStudentSession(response, existing);
+        return;
+      }
+      response.status(409).json({ message: "Username already exists. Please login with the same password, or choose another username." });
+      return;
+    }
+    response.status(400).json({ message });
   }
 }
 
