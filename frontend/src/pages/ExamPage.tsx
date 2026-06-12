@@ -90,7 +90,7 @@ export function ExamPage({ questions, onComplete, onFullscreenExitLimit }: ExamP
           <div className="mt-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">You can only move forward</p>
             <button onClick={goForward} className="rounded-lg bg-teal px-6 py-3 font-bold text-white hover:bg-teal/90">
-              {index === questions.length - 1 ? "Submit Exam" : "Next Question"}
+              {index === questions.length - 1 ? "Submit & View Results" : "Next Question"}
             </button>
           </div>
         </section>
