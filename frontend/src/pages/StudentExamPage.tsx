@@ -62,14 +62,14 @@ export function StudentExamPage({ code }: StudentExamPageProps) {
 
   if (stage === "instructions" && exam) return <InstructionsPage count={exam.questions.length} onStart={() => void start()} />;
   if (stage === "exam" && exam) return <ExamPage questions={exam.questions} onComplete={(answers) => void complete(answers)} />;
-  if (stage === "complete" && result) return <StudentResultPage result={result} review={review} onDone={() => { window.location.href = "/student"; }} />;
+  if (stage === "complete" && result) return <StudentResultPage result={result} review={review} onDone={() => { window.location.href = "/"; }} />;
   if (stage === "complete") {
     return (
       <div className="grid min-h-screen place-items-center bg-canvas px-6">
         <div className="max-w-md rounded-2xl bg-white p-8 text-center shadow-panel">
           <h1 className="text-2xl font-bold text-navy">Submission issue</h1>
           <p className="mt-3 text-slate-600">{error || "Your attempt could not be submitted."}</p>
-          <button onClick={() => { window.location.href = "/student"; }} className="mt-6 rounded-lg bg-teal px-6 py-3 font-bold text-white">Finish</button>
+          <button onClick={() => { window.location.href = "/"; }} className="mt-6 rounded-lg bg-teal px-6 py-3 font-bold text-white">Finish</button>
         </div>
       </div>
     );
@@ -85,7 +85,7 @@ export function StudentExamPage({ code }: StudentExamPageProps) {
           {error ? (
             <div>
               <p className="mt-5 rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</p>
-              <button onClick={() => { window.location.href = "/student"; }} className="mt-5 rounded-lg bg-teal px-6 py-3 font-bold text-white">Go to student login</button>
+              <button onClick={() => { window.location.href = "/"; }} className="mt-5 rounded-lg bg-teal px-6 py-3 font-bold text-white">Go to portal</button>
             </div>
           ) : (
             <div className="mt-7 grid gap-4">
