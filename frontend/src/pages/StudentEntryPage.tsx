@@ -16,6 +16,7 @@ export function StudentEntryPage() {
   const [exams, setExams] = useState<PublicExamSummary[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
   const loadExams = async (showLoading = true) => {
     if (showLoading) setLoading(true);
@@ -38,6 +39,7 @@ export function StudentEntryPage() {
 
   const authenticate = async () => {
     setError("");
+    setSuccess("");
     setLoading(true);
     try {
       const nextSession = mode === "register"
@@ -46,6 +48,9 @@ export function StudentEntryPage() {
       saveStudentSession(nextSession);
       setSession(nextSession);
       setPassword("");
+      setSuccess(mode === "register"
+        ? `Account created. You are logged in as ${nextSession.student.username}.`
+        : `Welcome back, ${nextSession.student.username}.`);
     } catch (authError) {
       setError(authError instanceof Error ? authError.message : "Unable to continue.");
     } finally {
@@ -58,6 +63,7 @@ export function StudentEntryPage() {
     setSession(null);
     setExams([]);
     setCode("");
+    setSuccess("");
   };
 
   const openExam = () => {
@@ -76,6 +82,9 @@ export function StudentEntryPage() {
           <p className="text-sm font-bold uppercase tracking-[0.2em] text-teal">Student portal</p>
           <h2 className="mt-3 text-3xl font-bold leading-tight text-navy sm:text-4xl">Login and choose your exam.</h2>
           <p className="mt-5 max-w-xl text-base leading-7 text-slate-600 sm:text-lg sm:leading-8">Create a student account once, then login with your username and password to write available exams.</p>
+          <p className="mt-4 rounded-lg bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-800">
+            Use your username to login, not your full name.
+          </p>
           <p className="mt-5 w-fit rounded-lg bg-white px-3 py-2 text-sm font-semibold text-slate-600 shadow-sm">Student URL: /student</p>
           <div className="mt-6 flex flex-wrap gap-5">
             <a className="text-sm font-bold text-teal underline" href="/">Choose portal</a>
@@ -151,6 +160,7 @@ export function StudentEntryPage() {
             </div>
           )}
           {error && <p role="alert" className="mt-5 rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</p>}
+          {success && <p role="status" className="mt-5 rounded-lg bg-teal/10 p-3 text-sm font-semibold text-teal">{success}</p>}
         </section>
       </main>
     </div>
