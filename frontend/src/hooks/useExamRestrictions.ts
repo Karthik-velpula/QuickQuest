@@ -1,7 +1,20 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
-export function useExamRestrictions(active: boolean) {
+interface UseExamRestrictionsOptions {
+  onFullscreenExitLimit?: () => void;
+  maxFullscreenExits?: number;
+}
+
+export function useExamRestrictions(active: boolean, options: UseExamRestrictionsOptions = {}) {
   const [fullscreenWarning, setFullscreenWarning] = useState(false);
+  const exitCountRef = useRef(0);
+  const onLimitRef = useRef(options.onFullscreenExitLimit);
+  const maxExitsRef = useRef(options.maxFullscreenExits ?? 5);
+
+  useEffect(() => {
+    onLimitRef.current = options.onFullscreenExitLimit;
+    maxExitsRef.current = options.maxFullscreenExits ?? 5;
+  }, [options.onFullscreenExitLimit, options.maxFullscreenExits]);
 
   useEffect(() => {
     if (!active) return;
@@ -11,7 +24,16 @@ export function useExamRestrictions(active: boolean) {
     const blockBack = () => {
       window.history.pushState(null, "", window.location.href);
     };
-    const handleFullscreen = () => setFullscreenWarning(!document.fullscreenElement);
+    const handleFullscreen = () => {
+      const isFullscreen = Boolean(document.fullscreenElement);
+      setFullscreenWarning(!isFullscreen);
+      if (!isFullscreen) {
+        exitCountRef.current += 1;
+        if (exitCountRef.current >= maxExitsRef.current) {
+          onLimitRef.current?.();
+        }
+      }
+    };
     const preventKeys = (event: KeyboardEvent) => {
       if (event.key === "F5" || ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "r")) {
         event.preventDefault();

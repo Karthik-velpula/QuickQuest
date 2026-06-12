@@ -9,15 +9,15 @@ import type { AnswerRecord, Question } from "../types/exam";
 interface ExamPageProps {
   questions: Question[];
   onComplete: (answers: AnswerRecord[]) => void;
+  onFullscreenExitLimit?: () => void;
 }
 
-export function ExamPage({ questions, onComplete }: ExamPageProps) {
+export function ExamPage({ questions, onComplete, onFullscreenExitLimit }: ExamPageProps) {
   const [index, setIndex] = useState(0);
   const [selected, setSelected] = useState<string | null>(null);
   const answersRef = useRef<AnswerRecord[]>([]);
   const selectedRef = useRef<string | null>(null);
   const advancingRef = useRef(false);
-  const { fullscreenWarning, restoreFullscreen } = useExamRestrictions(true);
   const question = questions[index] as Question;
 
   const goForward = useCallback(() => {
@@ -38,6 +38,15 @@ export function ExamPage({ questions, onComplete }: ExamPageProps) {
       advancingRef.current = false;
     }, 0);
   }, [index, onComplete, question.id, questions.length]);
+
+  const { fullscreenWarning, restoreFullscreen } = useExamRestrictions(true, {
+    maxFullscreenExits: 5,
+    onFullscreenExitLimit: () => {
+      if (advancingRef.current) return;
+      onFullscreenExitLimit?.();
+      goForward();
+    },
+  });
 
   const seconds = useQuestionTimer(index, goForward);
   const choose = (option: string) => {
