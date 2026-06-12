@@ -18,7 +18,12 @@ export function AdminPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const examLink = useMemo(() => (createdCode ? `${window.location.origin}/exam/${createdCode}` : ""), [createdCode]);
-  const answerLines = useMemo(() => answerKey.split("\n").map((line) => line.trim()).filter(Boolean).length, [answerKey]);
+  const answerLines = useMemo(() => {
+    const normalized = answerKey.replace(/[–—]/g, "-");
+    const lineCount = normalized.split("\n").map((line) => line.trim()).filter(Boolean).length;
+    const compactCount = (normalized.match(/(?:^|\s|\|)\s*(?:\d+)\s*[.)\-:>]+\s*[A-D]\b/gi) ?? []).length;
+    return Math.max(lineCount, compactCount);
+  }, [answerKey]);
 
   const login = async () => {
     setError("");
@@ -205,13 +210,13 @@ export function AdminPage() {
                   className="min-h-56 rounded-lg border border-slate-300 px-4 py-3 font-mono text-sm font-normal"
                   value={answerKey}
                   onChange={(event) => setAnswerKey(event.target.value)}
-                  placeholder={"1. B\n2. C\n3. A"}
-                />
-                {previewQuestions.length > 0 && (
-                  <span className={`text-xs ${answerLines === previewQuestions.length ? "text-teal" : "text-amber-600"}`}>
-                    {answerLines}/{previewQuestions.length} answer lines filled. Use one line per displayed question.
-                  </span>
-                )}
+                placeholder={"1. B\n2. C\n3. A\nor 1–B | 2–C | 3–A"}
+              />
+              {previewQuestions.length > 0 && (
+                <span className={`text-xs ${answerLines === previewQuestions.length ? "text-teal" : "text-amber-600"}`}>
+                    {answerLines}/{previewQuestions.length} answers detected. Use one line per question, or compact form like 1–B | 2–C.
+                </span>
+              )}
               </label>
               <button disabled={!previewQuestions.length} onClick={() => void createExam()} className="rounded-lg bg-teal px-5 py-3 font-bold text-white hover:bg-teal/90 disabled:opacity-40">{loading ? "Working..." : "Create exam link after checking preview"}</button>
               {examLink && (
