@@ -5,6 +5,7 @@ import { clearStudentSession, getSavedStudentSession, loginStudent, registerStud
 import type { PublicExamSummary, StudentSession } from "../types/exam";
 
 type AuthMode = "login" | "register";
+const PENDING_EXAM_KEY = "quickquest.pendingExamCode";
 
 export function StudentEntryPage() {
   const [mode, setMode] = useState<AuthMode>("login");
@@ -51,6 +52,11 @@ export function StudentEntryPage() {
       setSuccess(mode === "register"
         ? `Account created. You are logged in as ${nextSession.student.username}.`
         : `Welcome back, ${nextSession.student.username}.`);
+      const pendingExamCode = window.sessionStorage.getItem(PENDING_EXAM_KEY);
+      if (pendingExamCode) {
+        window.sessionStorage.removeItem(PENDING_EXAM_KEY);
+        window.location.href = `/exam/${pendingExamCode}`;
+      }
     } catch (authError) {
       setError(authError instanceof Error ? authError.message : "Unable to continue.");
     } finally {

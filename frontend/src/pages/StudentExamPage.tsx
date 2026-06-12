@@ -9,6 +9,7 @@ import { InstructionsPage } from "./InstructionsPage";
 import { StudentResultPage } from "./StudentResultPage";
 
 type Stage = "loading" | "join" | "instructions" | "exam" | "complete";
+const PENDING_EXAM_KEY = "quickquest.pendingExamCode";
 
 interface StudentExamPageProps {
   code: string;
@@ -24,8 +25,8 @@ export function StudentExamPage({ code }: StudentExamPageProps) {
 
   useEffect(() => {
     if (!studentSession) {
-      setError("Please login as a student before starting the exam.");
-      setStage("join");
+      window.sessionStorage.setItem(PENDING_EXAM_KEY, code);
+      window.location.href = "/student";
       return;
     }
     void getPublicExam(code)
@@ -46,6 +47,11 @@ export function StudentExamPage({ code }: StudentExamPageProps) {
       // The exam can continue; its fullscreen warning offers another user-initiated attempt.
     }
     setStage("exam");
+  };
+
+  const continueToInstructions = () => {
+    window.sessionStorage.removeItem(PENDING_EXAM_KEY);
+    setStage("instructions");
   };
 
   const complete = async (answers: AnswerRecord[]) => {
@@ -94,7 +100,7 @@ export function StudentExamPage({ code }: StudentExamPageProps) {
                 <p className="mt-1 font-bold text-navy">{studentSession?.student.displayName}</p>
                 <p className="text-xs text-slate-500">@{studentSession?.student.username}</p>
               </div>
-              <button disabled={!exam} onClick={() => setStage("instructions")} className="rounded-lg bg-teal px-6 py-4 font-bold text-white hover:bg-teal/90 disabled:opacity-40">Continue to instructions</button>
+              <button disabled={!exam} onClick={continueToInstructions} className="rounded-lg bg-teal px-6 py-4 font-bold text-white hover:bg-teal/90 disabled:opacity-40">Continue to instructions</button>
             </div>
           )}
         </section>
