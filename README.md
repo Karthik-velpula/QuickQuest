@@ -1,6 +1,6 @@
-# TCS-Style Aptitude Examination Simulator
+# Online Examination Portal
 
-A full-stack, desktop-oriented assessment application with admin-created temporary exams, document question extraction, separate answer-key upload by paste, student exam links, strict 25-second automatic progression, randomized questions/options, fullscreen monitoring, and in-memory attempt collection.
+A full-stack, desktop-oriented online examination portal with admin-created temporary exams, document question extraction, separate answer-key upload by paste, student exam links, strict 25-second automatic progression, randomized questions/options, fullscreen monitoring, and in-memory attempt collection.
 
 ## Stack
 
@@ -173,7 +173,7 @@ Successful response:
 ```json
 {
   "code": "ABC123",
-  "title": "Aptitude Assessment",
+  "title": "Online Assessment",
   "questionCount": 25,
   "examUrl": "/exam/ABC123"
 }
