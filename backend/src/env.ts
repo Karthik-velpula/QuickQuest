@@ -21,5 +21,7 @@ export function getMysqlConfig() {
     user: process.env.MYSQL_USER ?? "",
     database: process.env.MYSQL_DATABASE ?? "",
     passwordSet: Boolean(process.env.MYSQL_PASSWORD),
+    ssl: process.env.MYSQL_SSL ?? "true",
+    hasCaCert: Boolean(process.env.MYSQL_CA_CERT),
   };
 }
