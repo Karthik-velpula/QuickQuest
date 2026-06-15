@@ -16,9 +16,16 @@ export function AdminPage() {
   const [examSummary, setExamSummary] = useState<AdminExamSummary | null>(null);
   const [createdTests, setCreatedTests] = useState<AdminExamListSummary[]>([]);
   const [loading, setLoading] = useState(false);
+  const [refreshingResults, setRefreshingResults] = useState(false);
+  const [lastRefreshedAt, setLastRefreshedAt] = useState<string | null>(null);
   const [error, setError] = useState("");
   const examLink = useMemo(() => (createdCode ? `${window.location.origin}/exam/${createdCode}` : ""), [createdCode]);
-  const answerLines = useMemo(() => answerKey.split("\n").map((line) => line.trim()).filter(Boolean).length, [answerKey]);
+  const answerLines = useMemo(() => {
+    const normalized = answerKey.replace(/[–—]/g, "-");
+    const lineCount = normalized.split("\n").map((line) => line.trim()).filter(Boolean).length;
+    const compactCount = (normalized.match(/(?:^|\s|\|)\s*(?:\d+)\s*[.)\-:>]+\s*[A-D]\b/gi) ?? []).length;
+    return Math.max(lineCount, compactCount);
+  }, [answerKey]);
 
   useEffect(() => {
     if (!token || !lookupCode || !examSummary) return;
@@ -85,13 +92,14 @@ export function AdminPage() {
 
   const refreshAttempts = async () => {
     setError("");
-    setLoading(true);
+    setRefreshingResults(true);
     try {
       setExamSummary(await getAdminExam(token, lookupCode));
+      setLastRefreshedAt(new Date().toLocaleTimeString());
     } catch (refreshError) {
       setError(refreshError instanceof Error ? refreshError.message : "Unable to load exam.");
     } finally {
-      setLoading(false);
+      setRefreshingResults(false);
     }
   };
 
@@ -225,7 +233,7 @@ export function AdminPage() {
                 />
                 {previewQuestions.length > 0 && (
                   <span className={`text-xs ${answerLines === previewQuestions.length ? "text-teal" : "text-amber-600"}`}>
-                    {answerLines}/{previewQuestions.length} answer lines filled. Use one line per displayed question.
+                    {answerLines}/{previewQuestions.length} answers detected. Use one line per question, or compact form like 1–B | 2–C.
                   </span>
                 )}
               </label>
@@ -282,8 +290,19 @@ export function AdminPage() {
             <h2 className="text-2xl font-bold text-navy">Results</h2>
             <div className="mt-5 flex flex-col gap-3 sm:flex-row">
               <input className="min-w-0 flex-1 rounded-lg border border-slate-300 px-4 py-3 uppercase" value={lookupCode} onChange={(event) => setLookupCode(event.target.value.toUpperCase())} placeholder="Exam code" />
-              <button disabled={!token} onClick={() => void refreshAttempts()} className="rounded-lg bg-navy px-5 py-3 font-bold text-white disabled:opacity-40">Refresh</button>
+              <button disabled={!token || refreshingResults} onClick={() => void refreshAttempts()} className="rounded-lg bg-navy px-5 py-3 font-bold text-white disabled:opacity-40">
+                {refreshingResults ? "Refreshing..." : "Refresh"}
+              </button>
             </div>
+            {lookupCode && (
+              <p className="mt-3 text-xs font-semibold uppercase tracking-wider text-slate-500">
+                {refreshingResults
+                  ? "Refreshing results now..."
+                  : lastRefreshedAt
+                    ? `Last refreshed at ${lastRefreshedAt}`
+                    : "Press Refresh to load the latest results."}
+              </p>
+            )}
           </div>
           {examSummary && (
             <div className="mt-6">

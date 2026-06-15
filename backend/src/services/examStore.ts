@@ -212,7 +212,9 @@ async function fetchExamRows(code: string): Promise<Exam | undefined> {
   );
 
   const attempts: Attempt[] = [];
-  for (const [attemptIndex, attemptRow] of attemptRows.entries()) {
+  let previousRankKey = "";
+  let currentRank = 0;
+  for (const attemptRow of attemptRows) {
     const [answerRows] = await pool.query<mysql.RowDataPacket[] & AnswerRow[]>(
       `SELECT attempt_id, question_id, selected_answer
        FROM attempt_answers
@@ -220,9 +222,15 @@ async function fetchExamRows(code: string): Promise<Exam | undefined> {
       [attemptRow.id],
     );
 
+    const rankKey = `${attemptRow.percentage}|${attemptRow.correct}|${attemptRow.attempted}`;
+    if (rankKey !== previousRankKey) {
+      currentRank += 1;
+      previousRankKey = rankKey;
+    }
+
     attempts.push({
       id: attemptRow.id,
-      rank: attemptIndex + 1,
+      rank: currentRank,
       studentName: attemptRow.student_name,
       submittedAt: new Date(attemptRow.submitted_at).toISOString(),
       answers: answerRows.map((answerRow) => ({
