@@ -2,6 +2,7 @@ export interface Question {
   id: string;
   questionNumber?: number;
   passage?: string;
+  readingComprehension?: boolean;
   question: string;
   options: string[];
 }

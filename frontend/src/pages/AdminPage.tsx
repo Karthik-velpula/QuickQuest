@@ -26,6 +26,7 @@ export function AdminPage() {
     const compactCount = (normalized.match(/(?:^|\s|\|)\s*(?:\d+)\s*[.)\-:>]+\s*[A-D]\b/gi) ?? []).length;
     return Math.max(lineCount, compactCount);
   }, [answerKey]);
+  const getScoreTone = (percentage: number) => (percentage < 50 ? "text-red-600" : "text-teal");
 
   const formatDateTime = (value: string) =>
     new Intl.DateTimeFormat(undefined, {
@@ -341,7 +342,7 @@ export function AdminPage() {
                         <td className="px-3 py-3">{attempt.attempted}/{attempt.total}</td>
                         <td className="px-3 py-3">{attempt.correct}</td>
                         <td className="px-3 py-3">{attempt.incorrect}</td>
-                        <td className="px-3 py-3">{attempt.percentage}%</td>
+                        <td className={`px-3 py-3 font-bold ${getScoreTone(attempt.percentage)}`}>{attempt.percentage}%</td>
                         <td className="px-3 py-3">{new Date(attempt.submittedAt).toLocaleString()}</td>
                       </tr>
                     ))}

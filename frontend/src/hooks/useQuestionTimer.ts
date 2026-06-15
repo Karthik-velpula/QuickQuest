@@ -2,10 +2,15 @@ import { useEffect, useState } from "react";
 
 export const QUESTION_SECONDS = 25;
 
-export function useQuestionTimer(questionIndex: number, onExpire: () => void) {
+export function useQuestionTimer(questionIndex: number, onExpire: () => void, active = true) {
   const [secondsLeft, setSecondsLeft] = useState(QUESTION_SECONDS);
 
   useEffect(() => {
+    if (!active) {
+      setSecondsLeft(QUESTION_SECONDS);
+      return;
+    }
+
     const deadline = Date.now() + QUESTION_SECONDS * 1000;
     setSecondsLeft(QUESTION_SECONDS);
 
@@ -18,7 +23,7 @@ export function useQuestionTimer(questionIndex: number, onExpire: () => void) {
       window.clearInterval(interval);
       window.clearTimeout(timeout);
     };
-  }, [questionIndex, onExpire]);
+  }, [active, questionIndex, onExpire]);
 
   return secondsLeft;
 }

@@ -186,6 +186,7 @@ function parseReadingComprehensionQuestions(rawText: string): NumberedQuestion[]
         number,
         questionNumber: number,
         passage,
+        readingComprehension: true,
         question: cleanedQuestion,
         options: ["A", "B", "C", "D"].map((key) => options.get(key) as string),
       });
@@ -251,6 +252,7 @@ export function extractQuestions(rawText: string): Question[] {
     byNumber.set(question.number, {
       questionNumber: question.questionNumber,
       passage: question.passage,
+      readingComprehension: true,
       question: question.question,
       options: question.options,
     });

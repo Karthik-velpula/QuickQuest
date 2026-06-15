@@ -8,6 +8,7 @@ interface StudentResultPageProps {
 
 export function StudentResultPage({ result, review, onDone }: StudentResultPageProps) {
   const reviewItems = review.filter((item) => item.status !== "correct");
+  const lowScore = result.percentage < 50;
   const metrics = [
     ["Total Questions", result.total],
     ["Attempted", result.attempted],
@@ -28,8 +29,8 @@ export function StudentResultPage({ result, review, onDone }: StudentResultPageP
         <section className="grid gap-6 p-5 sm:gap-8 sm:p-8 md:grid-cols-[0.8fr_1.2fr]">
           <div className="grid place-items-center rounded-2xl bg-teal/5 p-6 text-center sm:p-8">
             <div>
-              <p className="text-5xl font-bold text-teal sm:text-6xl">{result.percentage}%</p>
-              <p className="mt-2 text-sm font-bold uppercase tracking-widest text-slate-500">Percentage</p>
+              <p className={`text-5xl font-bold sm:text-6xl ${lowScore ? "text-red-600" : "text-teal"}`}>{result.percentage}%</p>
+              <p className={`mt-2 text-sm font-bold uppercase tracking-widest ${lowScore ? "text-red-500" : "text-slate-500"}`}>Percentage</p>
             </div>
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
