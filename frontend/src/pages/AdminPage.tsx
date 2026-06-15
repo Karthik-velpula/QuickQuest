@@ -27,6 +27,12 @@ export function AdminPage() {
     return Math.max(lineCount, compactCount);
   }, [answerKey]);
 
+  const formatDateTime = (value: string) =>
+    new Intl.DateTimeFormat(undefined, {
+      dateStyle: "medium",
+      timeStyle: "short",
+    }).format(new Date(value));
+
   useEffect(() => {
     if (!token || !lookupCode || !examSummary) return;
     const interval = window.setInterval(() => {
@@ -271,6 +277,9 @@ export function AdminPage() {
                         <p className="mt-1 text-xs text-slate-500">
                           Code {test.code} · {test.questionCount} questions · {test.attemptCount} attempts
                         </p>
+                        <p className="mt-1 text-xs font-semibold text-slate-500">
+                          Created {formatDateTime(test.createdAt)}
+                        </p>
                         <a className="mt-2 block break-all text-xs font-semibold text-teal underline" href={`${window.location.origin}/exam/${test.code}`}>
                           {window.location.origin}/exam/{test.code}
                         </a>
@@ -309,6 +318,7 @@ export function AdminPage() {
               <div className="rounded-xl border border-slate-200 p-4">
                 <p className="font-bold text-navy">{examSummary.title}</p>
                 <p className="text-sm text-slate-500">{examSummary.questionCount} questions · {examSummary.attempts.length} attempts</p>
+                <p className="mt-1 text-xs font-semibold uppercase tracking-wider text-slate-500">Created {formatDateTime(createdTests.find((test) => test.code === examSummary.code)?.createdAt ?? new Date().toISOString())}</p>
               </div>
               <div className="mt-5 overflow-x-auto">
                 <table className="w-full min-w-[680px] text-left text-sm">
