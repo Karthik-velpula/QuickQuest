@@ -8,7 +8,7 @@ import { ExamPage } from "./ExamPage";
 import { InstructionsPage } from "./InstructionsPage";
 import { StudentResultPage } from "./StudentResultPage";
 
-type Stage = "loading" | "join" | "instructions" | "exam" | "complete";
+type Stage = "loading" | "join" | "instructions" | "exam" | "submitting" | "complete";
 
 interface StudentExamPageProps {
   code: string;
@@ -49,6 +49,7 @@ export function StudentExamPage({ code }: StudentExamPageProps) {
   };
 
   const complete = async (answers: AnswerRecord[]) => {
+    setStage("submitting");
     try {
       if (!studentSession) throw new Error("Student login required.");
       const submitted = await submitAttempt(code, studentSession.token, answers);
@@ -62,6 +63,16 @@ export function StudentExamPage({ code }: StudentExamPageProps) {
 
   if (stage === "instructions" && exam) return <InstructionsPage count={exam.questions.length} onStart={() => void start()} />;
   if (stage === "exam" && exam) return <ExamPage questions={exam.questions} onComplete={(answers) => void complete(answers)} />;
+  if (stage === "submitting") {
+    return (
+      <div className="grid min-h-screen place-items-center bg-canvas px-6">
+        <div className="max-w-md rounded-2xl bg-white p-8 text-center shadow-panel">
+          <h1 className="text-2xl font-bold text-navy">Submitting your exam</h1>
+          <p className="mt-3 text-slate-600">Please wait while we save your attempt and generate the result.</p>
+        </div>
+      </div>
+    );
+  }
   if (stage === "complete" && result) return <StudentResultPage result={result} review={review} onDone={() => { window.location.href = "/"; }} />;
   if (stage === "complete") {
     return (

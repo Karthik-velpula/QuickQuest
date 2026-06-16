@@ -1,5 +1,5 @@
 import type { Request, Response } from "express";
-import { getExam, getPublicExam, getStudentByToken, listPublicExams, submitAttempt } from "../services/examStore.js";
+import { getExamQuestions, getPublicExam, getStudentByToken, listPublicExams, submitAttempt } from "../services/examStore.js";
 import type { SubmittedAnswer } from "../types/exam.js";
 
 export async function listExamsForStudents(_request: Request, response: Response): Promise<void> {
@@ -29,7 +29,7 @@ export async function submitStudentAttempt(request: Request, response: Response)
     response.status(404).json({ message: "Exam not found or expired." });
     return;
   }
-  const exam = await getExam(code);
+  const exam = await getExamQuestions(code);
   const selectedByQuestion = new Map(attempt.answers.map((answer) => [answer.questionId, answer.selectedAnswer]));
   const review = exam?.questions.map((question) => {
     const selectedAnswer = selectedByQuestion.get(question.id) ?? null;

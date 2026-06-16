@@ -262,6 +262,70 @@ async function fetchExamRows(code: string): Promise<Exam | undefined> {
   };
 }
 
+async function fetchExamForScoring(code: string): Promise<Exam | undefined> {
+  await ensureSchema();
+  const [exams] = await pool.query<mysql.RowDataPacket[] & ExamRow[]>(
+    "SELECT code, title, created_at FROM exams WHERE code = ? LIMIT 1",
+    [code.toUpperCase()],
+  );
+  const examRow = exams[0];
+  if (!examRow) return undefined;
+
+  const [questions] = await pool.query<mysql.RowDataPacket[] & QuestionRow[]>(
+    `SELECT id, exam_code, question_order, document_question_number, passage, question_text, option_a, option_b, option_c, option_d, correct_answer
+     FROM exam_questions
+     WHERE exam_code = ?
+     ORDER BY question_order ASC`,
+    [code.toUpperCase()],
+  );
+
+  return {
+    code: examRow.code,
+    title: examRow.title,
+    createdAt: new Date(examRow.created_at).toISOString(),
+    attempts: [],
+    questions: questions.map((questionRow) => ({
+      id: questionRow.id,
+      questionNumber: questionRow.document_question_number ?? questionRow.question_order,
+      passage: questionRow.passage ?? undefined,
+      question: questionRow.question_text,
+      options: [questionRow.option_a, questionRow.option_b, questionRow.option_c, questionRow.option_d],
+      correctAnswer: questionRow.correct_answer,
+    })),
+  };
+}
+
+async function fetchExamQuestions(code: string): Promise<{ code: string; title: string; questions: Exam["questions"] } | undefined> {
+  await ensureSchema();
+  const [exams] = await pool.query<mysql.RowDataPacket[] & ExamRow[]>(
+    "SELECT code, title, created_at FROM exams WHERE code = ? LIMIT 1",
+    [code.toUpperCase()],
+  );
+  const examRow = exams[0];
+  if (!examRow) return undefined;
+
+  const [questions] = await pool.query<mysql.RowDataPacket[] & QuestionRow[]>(
+    `SELECT id, exam_code, question_order, document_question_number, passage, question_text, option_a, option_b, option_c, option_d, correct_answer
+     FROM exam_questions
+     WHERE exam_code = ?
+     ORDER BY question_order ASC`,
+    [code.toUpperCase()],
+  );
+
+  return {
+    code: examRow.code,
+    title: examRow.title,
+    questions: questions.map((questionRow) => ({
+      id: questionRow.id,
+      questionNumber: questionRow.document_question_number ?? questionRow.question_order,
+      passage: questionRow.passage ?? undefined,
+      question: questionRow.question_text,
+      options: [questionRow.option_a, questionRow.option_b, questionRow.option_c, questionRow.option_d],
+      correctAnswer: questionRow.correct_answer,
+    })),
+  };
+}
+
 export async function createExam(title: string, questions: Question[], rawAnswerKey: string): Promise<Exam> {
   await ensureSchema();
   const answerKey = parseAnswerKey(rawAnswerKey, questions.length);
@@ -325,6 +389,10 @@ export async function createExam(title: string, questions: Question[], rawAnswer
 
 export async function getExam(code: string): Promise<Exam | undefined> {
   return fetchExamRows(code);
+}
+
+export async function getExamQuestions(code: string): Promise<{ code: string; title: string; questions: Exam["questions"] } | undefined> {
+  return fetchExamQuestions(code);
 }
 
 export async function listPublicExams(): Promise<PublicExamSummary[]> {
@@ -405,7 +473,7 @@ export async function getPublicExam(code: string): Promise<{ code: string; title
 }
 
 export async function submitAttempt(code: string, studentName: string, answers: SubmittedAnswer[]): Promise<Attempt | undefined> {
-  const exam = await fetchExamRows(code);
+  const exam = await fetchExamForScoring(code);
   if (!exam) return undefined;
 
   const answerByQuestion = new Map(answers.map((answer) => [answer.questionId, answer.selectedAnswer]));

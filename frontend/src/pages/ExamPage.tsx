@@ -76,7 +76,7 @@ export function ExamPage({ questions, onComplete }: ExamPageProps) {
     }, 0);
   }, [index, onComplete, question.id, questions.length]);
 
-  const seconds = useQuestionTimer(index, goForward, phase === "normal");
+  const seconds = useQuestionTimer(index, goForward, phase === "normal" && !isReadingQuestion);
   const choose = (option: string) => {
     selectedRef.current = option;
     setSelected(option);
