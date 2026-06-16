@@ -158,6 +158,9 @@ function parseReadingComprehensionQuestions(rawText: string): NumberedQuestion[]
   const passageStartIndex = lines.findIndex((line) => /^(passage|passage\s*:)/i.test(line));
   const headingIndex = lines.findIndex((line) => /reading comprehension/i.test(line));
   const firstQuestionIndex = lines.findIndex((line, index) => index > Math.max(passageStartIndex, headingIndex) && /^\s*(?:question\s+)?(?:q\s*)?\d+\s*(?:[.)]|:)/i.test(line));
+  const questionStartIndices = lines
+    .map((line, index) => ({ line, index, match: line.match(/^\s*(?:question\s+)?(?:q\s*)?(\d+)\s*(?:[.)]|:)\s*(.*)$/i) }))
+    .filter((entry): entry is { line: string; index: number; match: RegExpMatchArray } => Boolean(entry.match));
 
   const passageLines: string[] = [];
   if (passageStartIndex >= 0) {
@@ -175,10 +178,18 @@ function parseReadingComprehensionQuestions(rawText: string): NumberedQuestion[]
       if (!line || /^(questions?|q\s*\d+)\b/i.test(line)) continue;
       passageLines.push(line);
     }
+  } else if (questionStartIndices.length) {
+    const firstBlockIndex = questionStartIndices[0]?.index ?? -1;
+    for (let index = Math.max(0, firstBlockIndex - 20); index < firstBlockIndex; index += 1) {
+      const line = lines[index];
+      if (!line || /^(questions?|q\s*\d+)\b/i.test(line)) continue;
+      if (/^(section\s+[a-z]|reading comprehension)/i.test(line)) continue;
+      passageLines.push(line);
+    }
   }
 
   const passage = normalizeWhitespace(passageLines.join(" "));
-  if (!passage) return [];
+  if (!passage || questionStartIndices.length < 2) return [];
 
   const questions: NumberedQuestion[] = [];
   const questionLines = lines;
