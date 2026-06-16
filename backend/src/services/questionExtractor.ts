@@ -161,7 +161,8 @@ function parseReadingComprehensionQuestions(rawText: string): NumberedQuestion[]
 
   const passageLines: string[] = [];
   if (passageStartIndex >= 0) {
-    const inlinePassage = lines[passageStartIndex].replace(/^passage\s*:?\s*/i, "").trim();
+    const passageLine = lines[passageStartIndex] ?? "";
+    const inlinePassage = passageLine.replace(/^passage\s*:?\s*/i, "").trim();
     if (inlinePassage) passageLines.push(inlinePassage);
     for (let index = passageStartIndex + 1; index < (firstQuestionIndex >= 0 ? firstQuestionIndex : lines.length); index += 1) {
       const line = lines[index];
