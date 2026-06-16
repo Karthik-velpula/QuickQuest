@@ -154,19 +154,19 @@ function parseClozeQuestions(rawText: string): NumberedQuestion[] {
 
 function parseReadingComprehensionQuestions(rawText: string): NumberedQuestion[] {
   const normalized = rawText.replace(/\r/g, "\n");
-  const sectionMatch = normalized.match(/Section\s+[A-Z]\s*[–-]\s*Reading Comprehension\s*\(Q(\d+)–Q(\d+)\)[\s\S]*?Passage:\s*([\s\S]*?)\n\s*(?:Q\d+\.|21\.)/i);
+  const sectionMatch = normalized.match(/Section\s+[A-Z]\s*[–-]\s*Reading Comprehension[\s\S]*?Passage:\s*([\s\S]*?)(?:\n\s*Questions?:|\n\s*Q\d+[.)])/i);
   if (!sectionMatch) return [];
 
-  const start = Number(sectionMatch[1]);
-  const end = Number(sectionMatch[2]);
-  const passage = normalizeWhitespace(sectionMatch[3] ?? "");
+  const passage = normalizeWhitespace(sectionMatch[1] ?? "");
   const questions: NumberedQuestion[] = [];
+  const questionLines = normalized.split("\n");
 
-  for (let number = start; number <= end; number += 1) {
-    const questionMatch = normalized.match(new RegExp(`(?:^|\\n)\\s*${number}[.)]\\s*([\\s\\S]*?)(?=(?:\\n\\s*${number + 1}[.)])|$)`, "i"));
-    if (!questionMatch) continue;
+  for (const line of questionLines) {
+    const startMatch = line.match(/^\s*(\d+)[.)]\s*(.*)$/);
+    if (!startMatch) continue;
+    const number = Number(startMatch[1]);
+    const body = startMatch[2] ?? "";
 
-    const body = questionMatch[1] ?? "";
     const optionMatches = [...body.matchAll(INLINE_OPTION)];
     const options = new Map<string, string>();
     for (const optionMatch of optionMatches) {

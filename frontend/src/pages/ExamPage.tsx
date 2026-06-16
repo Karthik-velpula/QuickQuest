@@ -23,10 +23,10 @@ export function ExamPage({ questions, onComplete }: ExamPageProps) {
   const readingStartedRef = useRef(false);
   const { fullscreenWarning, restoreFullscreen } = useExamRestrictions(true);
   const question = questions[index] as Question;
-  const isReadingQuestion = Boolean(question.readingComprehension);
+  const isReadingQuestion = Boolean(question.readingComprehension || question.passage);
 
   const rcQuestions = questions.filter((item) => item.readingComprehension);
-  const readingPassage = rcQuestions[0]?.passage ?? "";
+  const readingPassage = rcQuestions.find((item) => item.passage)?.passage ?? "";
 
   useEffect(() => {
     if (!isReadingQuestion || rcReadingDoneRef.current) {
@@ -83,12 +83,12 @@ export function ExamPage({ questions, onComplete }: ExamPageProps) {
   };
 
   useEffect(() => {
-    if (!question.readingComprehension) {
+    if (!(question.readingComprehension || question.passage)) {
       setPhase("normal");
       readingStartedRef.current = false;
       advancingRef.current = false;
     }
-  }, [index, question.readingComprehension]);
+  }, [index, question.passage, question.readingComprehension]);
 
   return (
     <div className="flex min-h-screen flex-col bg-canvas">
@@ -122,6 +122,11 @@ export function ExamPage({ questions, onComplete }: ExamPageProps) {
           ) : (
             <div className="mt-6 grid gap-6">
               <section>
+                {isReadingQuestion && (
+                  <p className="mb-4 rounded-lg bg-teal/10 px-3 py-2 text-sm font-semibold text-teal">
+                    Reading question. Passage was shown before this question.
+                  </p>
+                )}
                 <h2 className="text-xl font-semibold leading-relaxed text-navy sm:text-2xl md:text-3xl">{question.question}</h2>
                 <div className="mt-9 grid gap-4">
                   {question.options.map((option, optionIndex) => (
