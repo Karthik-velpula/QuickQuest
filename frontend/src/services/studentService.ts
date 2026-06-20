@@ -2,6 +2,7 @@ import type { StudentSession } from "../types/exam";
 
 const API = "/api";
 const SESSION_KEY = "quickquest.studentSession";
+const PENDING_EXAM_KEY = "quickquest.pendingExamPath";
 
 async function readJson<T>(response: Response): Promise<T> {
   const data = (await response.json()) as unknown;
@@ -45,4 +46,16 @@ export function getSavedStudentSession(): StudentSession | null {
 
 export function clearStudentSession(): void {
   window.sessionStorage.removeItem(SESSION_KEY);
+}
+
+export function savePendingExamPath(path: string): void {
+  window.sessionStorage.setItem(PENDING_EXAM_KEY, path);
+}
+
+export function getPendingExamPath(): string | null {
+  return window.sessionStorage.getItem(PENDING_EXAM_KEY);
+}
+
+export function clearPendingExamPath(): void {
+  window.sessionStorage.removeItem(PENDING_EXAM_KEY);
 }

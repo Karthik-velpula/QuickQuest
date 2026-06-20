@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { BrandHeader } from "../components/BrandHeader";
 import { getAvailableExams } from "../services/examService";
-import { clearStudentSession, getSavedStudentSession, loginStudent, registerStudent, saveStudentSession } from "../services/studentService";
+import { clearPendingExamPath, clearStudentSession, getPendingExamPath, getSavedStudentSession, loginStudent, registerStudent, saveStudentSession } from "../services/studentService";
 import type { PublicExamSummary, StudentSession } from "../types/exam";
 
 type AuthMode = "login" | "register";
@@ -51,6 +51,11 @@ export function StudentEntryPage() {
       setSuccess(mode === "register"
         ? `Account created. You are logged in as ${nextSession.student.username}.`
         : `Welcome back, ${nextSession.student.username}.`);
+      const pending = getPendingExamPath();
+      if (pending) {
+        clearPendingExamPath();
+        window.location.href = pending;
+      }
     } catch (authError) {
       setError(authError instanceof Error ? authError.message : "Unable to continue.");
     } finally {
@@ -60,6 +65,7 @@ export function StudentEntryPage() {
 
   const logout = () => {
     clearStudentSession();
+    clearPendingExamPath();
     setSession(null);
     setExams([]);
     setCode("");
