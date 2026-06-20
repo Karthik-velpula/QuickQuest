@@ -3,8 +3,10 @@ import path from "node:path";
 import dotenv from "dotenv";
 
 const candidates = [
-  path.resolve(process.cwd(), "../.env"),
+  path.resolve(process.cwd(), "backend/.env"),
+  path.resolve(process.cwd(), "../backend/.env"),
   path.resolve(process.cwd(), ".env"),
+  path.resolve(process.cwd(), "../.env"),
 ];
 
 for (const file of candidates) {

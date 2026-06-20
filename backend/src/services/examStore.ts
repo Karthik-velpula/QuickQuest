@@ -344,7 +344,15 @@ async function evaluateEmailAnswer(prompt: string, modelAnswer: string | null, s
     }),
   });
 
-  if (!response.ok) return fallback;
+  if (!response.ok) {
+    const errorText = await response.text().catch(() => "");
+    console.error("OpenAI email grading failed", { status: response.status, statusText: response.statusText, errorText });
+    return {
+      ...fallback,
+      grammar: [studentAnswer.trim() ? "AI grading could not complete. Check that OPENAI_API_KEY is valid and the model can be reached." : "No email was submitted."],
+      overallFeedback: "AI grading is currently unavailable. Please verify OPENAI_API_KEY and try again.",
+    };
+  }
 
   const data = (await response.json()) as { output_text?: string };
   try {
@@ -358,8 +366,13 @@ async function evaluateEmailAnswer(prompt: string, modelAnswer: string | null, s
       correctness: String(parsed.correctness ?? fallback.correctness),
       overallFeedback: String(parsed.overallFeedback ?? fallback.overallFeedback),
     };
-  } catch {
-    return fallback;
+  } catch (error) {
+    console.error("OpenAI email grading parse failed", error);
+    return {
+      ...fallback,
+      grammar: [studentAnswer.trim() ? "AI returned an unreadable response. Please retry with a valid OPENAI_API_KEY." : "No email was submitted."],
+      overallFeedback: "AI grading returned an invalid response. Please verify the OpenAI configuration.",
+    };
   }
 }
 
