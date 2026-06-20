@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { BrandHeader } from "../components/BrandHeader";
 import { clearAdminExamResults, createAdminExam, deleteAdminExam, getAdminExam, getAdminExams, loginAdmin, previewQuestionFile } from "../services/adminService";
-import { createEmailExam } from "../services/emailExamService";
-import type { AdminExamListSummary, AdminExamSummary, Question } from "../types/exam";
+import { createEmailExam, getAdminEmailExams } from "../services/emailExamService";
+import type { AdminExamListSummary, AdminExamSummary, EmailExamListSummary, Question } from "../types/exam";
 
 export function AdminPage() {
   const [token, setToken] = useState("");
@@ -20,6 +20,7 @@ export function AdminPage() {
   const [lookupCode, setLookupCode] = useState("");
   const [examSummary, setExamSummary] = useState<AdminExamSummary | null>(null);
   const [createdTests, setCreatedTests] = useState<AdminExamListSummary[]>([]);
+  const [createdEmailTests, setCreatedEmailTests] = useState<EmailExamListSummary[]>([]);
   const [loading, setLoading] = useState(false);
   const [refreshingResults, setRefreshingResults] = useState(false);
   const [lastRefreshedAt, setLastRefreshedAt] = useState<string | null>(null);
@@ -54,6 +55,7 @@ export function AdminPage() {
       const adminToken = await loginAdmin(username, password);
       setToken(adminToken);
       setCreatedTests(await getAdminExams(adminToken));
+      setCreatedEmailTests(await getAdminEmailExams(adminToken));
     } catch (loginError) {
       setError(loginError instanceof Error ? loginError.message : "Login failed.");
     } finally {
@@ -92,6 +94,7 @@ export function AdminPage() {
       const created = await createEmailExam(token, emailTitle || "Email Writing Assessment", emailPrompt, emailModelAnswer);
       setEmailLink(`${window.location.origin}${created.examUrl}`);
       setCreatedTests(await getAdminExams(token));
+      setCreatedEmailTests(await getAdminEmailExams(token));
     } catch (createError) {
       setError(createError instanceof Error ? createError.message : "Unable to create email exam.");
     } finally {
@@ -137,6 +140,7 @@ export function AdminPage() {
     setToken("");
     setPassword("");
     setCreatedTests([]);
+    setCreatedEmailTests([]);
     setExamSummary(null);
     setCreatedCode("");
     setLookupCode("");
@@ -150,6 +154,7 @@ export function AdminPage() {
     setLoading(true);
     try {
       setCreatedTests(await getAdminExams(token));
+      setCreatedEmailTests(await getAdminEmailExams(token));
     } catch (refreshError) {
       setError(refreshError instanceof Error ? refreshError.message : "Unable to load created tests.");
     } finally {
@@ -317,7 +322,7 @@ export function AdminPage() {
         <section className="rounded-2xl bg-white p-5 shadow-panel sm:p-8">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div>
-              <h2 className="text-2xl font-bold text-navy">Created tests</h2>
+              <h2 className="text-2xl font-bold text-navy">Created MCQ tests</h2>
               <p className="mt-1 text-sm text-slate-500">Delete tests or open results from here.</p>
             </div>
             <button disabled={!token} onClick={() => void refreshCreatedTests()} className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-bold text-navy disabled:opacity-40">Refresh</button>
@@ -354,6 +359,42 @@ export function AdminPage() {
               )}
             </div>
           )}
+
+          <div className="mt-8 border-t border-slate-200 pt-8">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <h2 className="text-2xl font-bold text-navy">Created email exams</h2>
+                <p className="mt-1 text-sm text-slate-500">Email-writing links appear separately here.</p>
+              </div>
+            </div>
+            {token && (
+              <div className="mt-5 grid gap-3">
+                {createdEmailTests.length === 0 ? (
+                  <p className="rounded-xl bg-slate-50 p-4 text-sm text-slate-600">No email exams created yet.</p>
+                ) : (
+                  createdEmailTests.map((test) => (
+                    <article key={test.code} className="rounded-xl border border-slate-200 p-4">
+                      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                        <div>
+                          <p className="font-bold text-navy">{test.title}</p>
+                          <p className="mt-1 text-xs text-slate-500">Code {test.code} · Email exam</p>
+                          <p className="mt-1 text-xs font-semibold text-slate-500">Created {formatDateTime(test.createdAt)}</p>
+                          <a className="mt-2 block break-all text-xs font-semibold text-teal underline" href={`${window.location.origin}/email-exam/${test.code}`}>
+                            {window.location.origin}/email-exam/{test.code}
+                          </a>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          <button onClick={() => window.open(`${window.location.origin}/email-exam/${test.code}`, "_blank")} className="rounded-lg bg-navy px-4 py-2 text-sm font-bold text-white">
+                            Open link
+                          </button>
+                        </div>
+                      </div>
+                    </article>
+                  ))
+                )}
+              </div>
+            )}
+          </div>
 
           <div className="mt-8 border-t border-slate-200 pt-8">
             <h2 className="text-2xl font-bold text-navy">Results</h2>

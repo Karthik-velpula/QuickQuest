@@ -1,4 +1,4 @@
-import type { EmailExamResult, EmailExamSummary } from "../types/exam";
+import type { EmailExamListSummary, EmailExamResult, EmailExamSummary } from "../types/exam";
 
 const API = "/api";
 
@@ -31,4 +31,12 @@ export async function submitEmailExam(code: string, studentName: string, answer:
   });
   const data = await readJson<{ feedback: EmailExamResult["feedback"] }>(response);
   return { feedback: data.feedback };
+}
+
+export async function getAdminEmailExams(token: string): Promise<EmailExamListSummary[]> {
+  const response = await fetch(`${API}/email-exams/admin`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  const data = await readJson<{ exams: Array<{ code: string; title: string; createdAt: string }> }>(response);
+  return data.exams.map((exam) => ({ ...exam, examType: "email" }));
 }

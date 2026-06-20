@@ -1,5 +1,5 @@
 import type { Request, Response } from "express";
-import { createEmailExam, getEmailExam, submitEmailExam } from "../services/examStore.js";
+import { createEmailExam, getEmailExam, listEmailExams, submitEmailExam } from "../services/examStore.js";
 
 export async function createEmailExamFromAdmin(request: Request, response: Response): Promise<void> {
   const { title = "Email Writing Assessment", prompt = "", modelAnswer = "" } = request.body as {
@@ -19,6 +19,10 @@ export async function createEmailExamFromAdmin(request: Request, response: Respo
     examUrl: `/email-exam/${exam.code}`,
     createdAt: exam.createdAt,
   });
+}
+
+export async function listAdminEmailExams(_request: Request, response: Response): Promise<void> {
+  response.json({ exams: await listEmailExams() });
 }
 
 export async function getEmailExamForStudent(request: Request, response: Response): Promise<void> {

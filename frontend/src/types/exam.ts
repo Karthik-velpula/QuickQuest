@@ -25,6 +25,13 @@ export interface AdminExamListSummary extends PublicExamSummary {
   attemptCount: number;
 }
 
+export interface EmailExamListSummary {
+  code: string;
+  title: string;
+  createdAt: string;
+  examType?: "email";
+}
+
 export interface StudentProfile {
   username: string;
   displayName: string;
