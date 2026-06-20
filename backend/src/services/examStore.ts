@@ -60,6 +60,16 @@ export type StudentSession = {
   displayName: string;
 };
 
+type ExamCacheEntry = {
+  expiresAt: number;
+  exam: Exam | undefined;
+};
+
+type ExamQuestionsCacheEntry = {
+  expiresAt: number;
+  exam: { code: string; title: string; questions: Exam["questions"] } | undefined;
+};
+
 export const pool = mysql.createPool({
   host: process.env.MYSQL_HOST,
   port: process.env.MYSQL_PORT ? Number(process.env.MYSQL_PORT) : 3306,
@@ -81,6 +91,52 @@ export const pool = mysql.createPool({
 });
 
 let schemaReady: Promise<void> | null = null;
+const examCache = new Map<string, ExamCacheEntry>();
+const examQuestionsCache = new Map<string, ExamQuestionsCacheEntry>();
+const EXAM_CACHE_TTL_MS = 30_000;
+
+function cacheKey(code: string): string {
+  return code.toUpperCase();
+}
+
+function getCachedExam(code: string): Exam | undefined | null {
+  const entry = examCache.get(cacheKey(code));
+  if (!entry) return null;
+  if (entry.expiresAt < Date.now()) {
+    examCache.delete(cacheKey(code));
+    return null;
+  }
+  return entry.exam;
+}
+
+function setCachedExam(code: string, exam: Exam | undefined): void {
+  examCache.set(cacheKey(code), { exam, expiresAt: Date.now() + EXAM_CACHE_TTL_MS });
+}
+
+function getCachedExamQuestions(code: string): { code: string; title: string; questions: Exam["questions"] } | undefined | null {
+  const entry = examQuestionsCache.get(cacheKey(code));
+  if (!entry) return null;
+  if (entry.expiresAt < Date.now()) {
+    examQuestionsCache.delete(cacheKey(code));
+    return null;
+  }
+  return entry.exam;
+}
+
+function setCachedExamQuestions(code: string, exam: { code: string; title: string; questions: Exam["questions"] } | undefined): void {
+  examQuestionsCache.set(cacheKey(code), { exam, expiresAt: Date.now() + EXAM_CACHE_TTL_MS });
+}
+
+function invalidateExamCache(code: string): void {
+  const key = cacheKey(code);
+  examCache.delete(key);
+  examQuestionsCache.delete(key);
+}
+
+function invalidateAllExamCache(): void {
+  examCache.clear();
+  examQuestionsCache.clear();
+}
 
 async function ensureSchema(): Promise<void> {
   if (schemaReady) return schemaReady;
@@ -191,13 +247,19 @@ function hashPassword(password: string, salt: string): string {
 }
 
 async function fetchExamRows(code: string): Promise<Exam | undefined> {
+  const cached = getCachedExam(code);
+  if (cached !== null) return cached;
+
   await ensureSchema();
   const [exams] = await pool.query<mysql.RowDataPacket[] & ExamRow[]>(
     "SELECT code, title, created_at FROM exams WHERE code = ? LIMIT 1",
     [code.toUpperCase()],
   );
   const examRow = exams[0];
-  if (!examRow) return undefined;
+  if (!examRow) {
+    setCachedExam(code, undefined);
+    return undefined;
+  }
 
   const [questions] = await pool.query<mysql.RowDataPacket[] & QuestionRow[]>(
     `SELECT id, exam_code, question_order, document_question_number, passage, question_text, option_a, option_b, option_c, option_d, correct_answer
@@ -250,7 +312,7 @@ async function fetchExamRows(code: string): Promise<Exam | undefined> {
     });
   }
 
-  return {
+  const exam = {
     code: examRow.code,
     title: examRow.title,
     createdAt: new Date(examRow.created_at).toISOString(),
@@ -264,6 +326,8 @@ async function fetchExamRows(code: string): Promise<Exam | undefined> {
       correctAnswer: questionRow.correct_answer,
     })),
   };
+  setCachedExam(code, exam);
+  return exam;
 }
 
 async function fetchExamForScoring(code: string): Promise<Exam | undefined> {
@@ -300,13 +364,19 @@ async function fetchExamForScoring(code: string): Promise<Exam | undefined> {
 }
 
 async function fetchExamQuestions(code: string): Promise<{ code: string; title: string; questions: Exam["questions"] } | undefined> {
+  const cached = getCachedExamQuestions(code);
+  if (cached !== null) return cached;
+
   await ensureSchema();
   const [exams] = await pool.query<mysql.RowDataPacket[] & ExamRow[]>(
     "SELECT code, title, created_at FROM exams WHERE code = ? LIMIT 1",
     [code.toUpperCase()],
   );
   const examRow = exams[0];
-  if (!examRow) return undefined;
+  if (!examRow) {
+    setCachedExamQuestions(code, undefined);
+    return undefined;
+  }
 
   const [questions] = await pool.query<mysql.RowDataPacket[] & QuestionRow[]>(
     `SELECT id, exam_code, question_order, document_question_number, passage, question_text, option_a, option_b, option_c, option_d, correct_answer
@@ -316,7 +386,7 @@ async function fetchExamQuestions(code: string): Promise<{ code: string; title: 
     [code.toUpperCase()],
   );
 
-  return {
+  const exam = {
     code: examRow.code,
     title: examRow.title,
     questions: questions.map((questionRow) => ({
@@ -328,6 +398,8 @@ async function fetchExamQuestions(code: string): Promise<{ code: string; title: 
       correctAnswer: questionRow.correct_answer,
     })),
   };
+  setCachedExamQuestions(code, exam);
+  return exam;
 }
 
 export async function createExam(title: string, questions: Question[], rawAnswerKey: string): Promise<Exam> {
@@ -457,6 +529,7 @@ export async function deleteExam(code: string): Promise<boolean> {
     await connection.query("DELETE FROM exam_questions WHERE exam_code = ?", [examCode]);
     const [result] = await connection.query<mysql.ResultSetHeader>("DELETE FROM exams WHERE code = ?", [examCode]);
     await connection.commit();
+    invalidateExamCache(examCode);
     return result.affectedRows > 0;
   } catch (error) {
     await connection.rollback();
@@ -482,6 +555,7 @@ export async function clearExamResults(code: string): Promise<boolean> {
     }
     const [result] = await connection.query<mysql.ResultSetHeader>("DELETE FROM exam_attempts WHERE exam_code = ?", [examCode]);
     await connection.commit();
+    invalidateExamCache(examCode);
     return result.affectedRows > 0 || attemptRows.length > 0;
   } catch (error) {
     await connection.rollback();
