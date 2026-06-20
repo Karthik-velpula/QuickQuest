@@ -1,5 +1,5 @@
 import type { Request, Response } from "express";
-import { createEmailExam, getEmailExam, listEmailExams, submitEmailExam } from "../services/examStore.js";
+import { clearEmailExamResults, createEmailExam, deleteEmailExam, getEmailExam, listEmailExams, submitEmailExam } from "../services/examStore.js";
 
 export async function createEmailExamFromAdmin(request: Request, response: Response): Promise<void> {
   const { title = "Email Writing Assessment", prompt = "", modelAnswer = "" } = request.body as {
@@ -23,6 +23,24 @@ export async function createEmailExamFromAdmin(request: Request, response: Respo
 
 export async function listAdminEmailExams(_request: Request, response: Response): Promise<void> {
   response.json({ exams: await listEmailExams() });
+}
+
+export async function clearAdminEmailExamResults(request: Request, response: Response): Promise<void> {
+  const cleared = await clearEmailExamResults(String(request.params.code ?? ""));
+  if (!cleared) {
+    response.status(404).json({ message: "Email exam not found or has no results." });
+    return;
+  }
+  response.json({ message: "Email exam results cleared." });
+}
+
+export async function deleteAdminEmailExam(request: Request, response: Response): Promise<void> {
+  const deleted = await deleteEmailExam(String(request.params.code ?? ""));
+  if (!deleted) {
+    response.status(404).json({ message: "Email exam not found." });
+    return;
+  }
+  response.json({ message: "Email exam deleted." });
 }
 
 export async function getEmailExamForStudent(request: Request, response: Response): Promise<void> {

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { BrandHeader } from "../components/BrandHeader";
 import { clearAdminExamResults, createAdminExam, deleteAdminExam, getAdminExam, getAdminExams, loginAdmin, previewQuestionFile } from "../services/adminService";
-import { createEmailExam, getAdminEmailExams } from "../services/emailExamService";
+import { clearAdminEmailExamResults, createEmailExam, deleteAdminEmailExam, getAdminEmailExams } from "../services/emailExamService";
 import type { AdminExamListSummary, AdminExamSummary, EmailExamListSummary, Question } from "../types/exam";
 
 export function AdminPage() {
@@ -210,6 +210,35 @@ export function AdminPage() {
     }
   };
 
+  const clearEmailResults = async (code: string) => {
+    if (!window.confirm(`Clear all results for email exam ${code}? The exam and prompt will stay, but student submissions will be removed.`)) return;
+    setError("");
+    setLoading(true);
+    try {
+      await clearAdminEmailExamResults(token, code);
+      setCreatedEmailTests(await getAdminEmailExams(token));
+    } catch (clearError) {
+      setError(clearError instanceof Error ? clearError.message : "Unable to clear email exam results.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const removeEmailExam = async (code: string) => {
+    if (!window.confirm(`Delete email exam ${code}? This will also delete its student submissions.`)) return;
+    setError("");
+    setLoading(true);
+    try {
+      await deleteAdminEmailExam(token, code);
+      setCreatedEmailTests((tests) => tests.filter((test) => test.code !== code));
+      if (emailLink.endsWith(`/email-exam/${code}`)) setEmailLink("");
+    } catch (deleteError) {
+      setError(deleteError instanceof Error ? deleteError.message : "Unable to delete email exam.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-canvas">
       <BrandHeader />
@@ -386,6 +415,12 @@ export function AdminPage() {
                         <div className="flex flex-wrap gap-2">
                           <button onClick={() => window.open(`${window.location.origin}/email-exam/${test.code}`, "_blank")} className="rounded-lg bg-navy px-4 py-2 text-sm font-bold text-white">
                             Open link
+                          </button>
+                          <button onClick={() => void clearEmailResults(test.code)} className="rounded-lg border border-amber-200 px-4 py-2 text-sm font-bold text-amber-700 hover:bg-amber-50">
+                            Clear results
+                          </button>
+                          <button onClick={() => void removeEmailExam(test.code)} className="rounded-lg border border-red-200 px-4 py-2 text-sm font-bold text-red-700 hover:bg-red-50">
+                            Delete
                           </button>
                         </div>
                       </div>

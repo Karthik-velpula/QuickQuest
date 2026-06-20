@@ -882,3 +882,38 @@ export async function submitEmailExam(code: string, studentName: string, student
   );
   return { id, studentName: studentName.trim() || "Anonymous Student", submittedAt: submittedAt.toISOString(), score: feedback.score, feedback };
 }
+
+export async function clearEmailExamResults(code: string): Promise<boolean> {
+  await ensureSchema();
+  const examCode = code.toUpperCase();
+  const connection = await pool.getConnection();
+  try {
+    await connection.beginTransaction();
+    const [result] = await connection.query<mysql.ResultSetHeader>("DELETE FROM email_exam_attempts WHERE exam_code = ?", [examCode]);
+    await connection.commit();
+    return result.affectedRows > 0;
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
+}
+
+export async function deleteEmailExam(code: string): Promise<boolean> {
+  await ensureSchema();
+  const examCode = code.toUpperCase();
+  const connection = await pool.getConnection();
+  try {
+    await connection.beginTransaction();
+    await connection.query("DELETE FROM email_exam_attempts WHERE exam_code = ?", [examCode]);
+    const [result] = await connection.query<mysql.ResultSetHeader>("DELETE FROM email_exams WHERE code = ?", [examCode]);
+    await connection.commit();
+    return result.affectedRows > 0;
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
+}

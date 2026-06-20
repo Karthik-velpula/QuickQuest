@@ -40,3 +40,19 @@ export async function getAdminEmailExams(token: string): Promise<EmailExamListSu
   const data = await readJson<{ exams: Array<{ code: string; title: string; createdAt: string }> }>(response);
   return data.exams.map((exam) => ({ ...exam, examType: "email" }));
 }
+
+export async function clearAdminEmailExamResults(token: string, code: string): Promise<void> {
+  const response = await fetch(`${API}/email-exams/admin/${code}/results`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  await readJson<{ message: string }>(response);
+}
+
+export async function deleteAdminEmailExam(token: string, code: string): Promise<void> {
+  const response = await fetch(`${API}/email-exams/admin/${code}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  await readJson<{ message: string }>(response);
+}
