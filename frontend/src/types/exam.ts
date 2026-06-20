@@ -18,6 +18,7 @@ export interface PublicExamSummary {
   title: string;
   questionCount: number;
   createdAt: string;
+  examType?: "mcq" | "email";
 }
 
 export interface AdminExamListSummary extends PublicExamSummary {
@@ -70,4 +71,24 @@ export interface AdminExamSummary {
   questionCount: number;
   createdAt: string;
   attempts: AttemptSummary[];
+}
+
+export interface EmailExamSummary {
+  code: string;
+  title: string;
+  prompt: string;
+  modelAnswer?: string;
+  createdAt: string;
+}
+
+export interface EmailExamResult {
+  feedback: {
+    score: number;
+    grammar: string[];
+    tone: string;
+    clarity: string;
+    relevance: string;
+    correctness: string;
+    overallFeedback: string;
+  };
 }

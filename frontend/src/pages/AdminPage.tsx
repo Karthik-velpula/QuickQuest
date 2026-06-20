@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { BrandHeader } from "../components/BrandHeader";
 import { clearAdminExamResults, createAdminExam, deleteAdminExam, getAdminExam, getAdminExams, loginAdmin, previewQuestionFile } from "../services/adminService";
+import { createEmailExam } from "../services/emailExamService";
 import type { AdminExamListSummary, AdminExamSummary, Question } from "../types/exam";
 
 export function AdminPage() {
@@ -9,6 +10,10 @@ export function AdminPage() {
   const [password, setPassword] = useState("");
   const [title, setTitle] = useState("");
   const [answerKey, setAnswerKey] = useState("");
+  const [emailTitle, setEmailTitle] = useState("");
+  const [emailPrompt, setEmailPrompt] = useState("");
+  const [emailModelAnswer, setEmailModelAnswer] = useState("");
+  const [emailLink, setEmailLink] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [previewQuestions, setPreviewQuestions] = useState<Question[]>([]);
   const [createdCode, setCreatedCode] = useState("");
@@ -71,6 +76,24 @@ export function AdminPage() {
       setCreatedTests(await getAdminExams(token));
     } catch (createError) {
       setError(createError instanceof Error ? createError.message : "Unable to create exam.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const createEmailAssessment = async () => {
+    if (!emailPrompt.trim()) {
+      setError("Enter an email prompt first.");
+      return;
+    }
+    setError("");
+    setLoading(true);
+    try {
+      const created = await createEmailExam(token, emailTitle || "Email Writing Assessment", emailPrompt, emailModelAnswer);
+      setEmailLink(`${window.location.origin}${created.examUrl}`);
+      setCreatedTests(await getAdminExams(token));
+    } catch (createError) {
+      setError(createError instanceof Error ? createError.message : "Unable to create email exam.");
     } finally {
       setLoading(false);
     }
@@ -208,6 +231,23 @@ export function AdminPage() {
             </div>
           ) : (
             <div className="mt-8 grid gap-5">
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <h3 className="text-lg font-bold text-navy">Create email exam link</h3>
+                <label className="mt-4 grid gap-2 text-sm font-semibold text-slate-700">
+                  Title
+                  <input className="rounded-lg border border-slate-300 px-4 py-3 font-normal" value={emailTitle} onChange={(event) => setEmailTitle(event.target.value)} placeholder="Email Writing Assessment" />
+                </label>
+                <label className="mt-4 grid gap-2 text-sm font-semibold text-slate-700">
+                  Email prompt
+                  <textarea className="min-h-32 rounded-lg border border-slate-300 px-4 py-3 font-normal" value={emailPrompt} onChange={(event) => setEmailPrompt(event.target.value)} placeholder="Write an email to your manager requesting leave..." />
+                </label>
+                <label className="mt-4 grid gap-2 text-sm font-semibold text-slate-700">
+                  Optional model answer
+                  <textarea className="min-h-28 rounded-lg border border-slate-300 px-4 py-3 font-normal" value={emailModelAnswer} onChange={(event) => setEmailModelAnswer(event.target.value)} placeholder="Optional sample answer for better evaluation" />
+                </label>
+                <button onClick={() => void createEmailAssessment()} className="mt-4 rounded-lg bg-navy px-5 py-3 font-bold text-white hover:bg-navy/90">{loading ? "Creating..." : "Create email exam link"}</button>
+                {emailLink && <a className="mt-3 block break-all text-sm font-semibold text-teal underline" href={emailLink}>{emailLink}</a>}
+              </div>
               <label className="grid gap-2 text-sm font-semibold text-slate-700">
                 Exam title
                 <input className="rounded-lg border border-slate-300 px-4 py-3 font-normal" value={title} onChange={(event) => setTitle(event.target.value)} />

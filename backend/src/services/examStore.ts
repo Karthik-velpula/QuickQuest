@@ -1,6 +1,6 @@
 import crypto from "node:crypto";
 import mysql from "mysql2/promise";
-import type { AdminExamListSummary, Attempt, Exam, PublicExamSummary, PublicQuestion, SubmittedAnswer } from "../types/exam.js";
+import type { AdminExamListSummary, Attempt, EmailExamFeedback, Exam, PublicExamSummary, PublicQuestion, SubmittedAnswer } from "../types/exam.js";
 import type { Question } from "../types/question.js";
 import { parseAnswerKey } from "./answerKeyParser.js";
 
@@ -37,6 +37,24 @@ type AttemptRow = {
   incorrect: number;
   unanswered: number;
   percentage: number;
+};
+
+type EmailExamRow = {
+  code: string;
+  title: string;
+  prompt: string;
+  model_answer: string | null;
+  created_at: string;
+};
+
+type EmailAttemptRow = {
+  id: string;
+  exam_code: string;
+  student_name: string;
+  student_answer: string;
+  submitted_at: string;
+  score: number;
+  feedback_json: string;
 };
 
 type AnswerRow = {
@@ -221,6 +239,29 @@ async function ensureSchema(): Promise<void> {
         INDEX idx_student_sessions_expires_at (expires_at)
       )
     `);
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS email_exams (
+        code VARCHAR(12) PRIMARY KEY,
+        title VARCHAR(255) NOT NULL,
+        prompt TEXT NOT NULL,
+        model_answer TEXT NULL,
+        created_at DATETIME(3) NOT NULL
+      )
+    `);
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS email_exam_attempts (
+        id VARCHAR(36) PRIMARY KEY,
+        exam_code VARCHAR(12) NOT NULL,
+        student_name VARCHAR(255) NOT NULL,
+        student_answer LONGTEXT NOT NULL,
+        submitted_at DATETIME(3) NOT NULL,
+        score DECIMAL(5,1) NOT NULL,
+        feedback_json JSON NOT NULL,
+        CONSTRAINT fk_email_exam_attempts_exam FOREIGN KEY (exam_code) REFERENCES email_exams(code) ON DELETE CASCADE,
+        INDEX idx_email_exam_attempts_exam_code (exam_code),
+        INDEX idx_email_exam_attempts_submitted_at (submitted_at)
+      )
+    `);
   })();
 
   return schemaReady;
@@ -238,12 +279,88 @@ function normalizeResponse(text: string | null | undefined): string {
   return String(text ?? "").trim().toLowerCase().replace(/\s+/g, " ");
 }
 
+function normalizeText(text: string | null | undefined): string {
+  return String(text ?? "").trim().replace(/\s+/g, " ");
+}
+
 function normalizeUsername(username: string): string {
   return username.trim().toLowerCase();
 }
 
 function hashPassword(password: string, salt: string): string {
   return crypto.scryptSync(password, salt, 64).toString("hex");
+}
+
+async function evaluateEmailAnswer(prompt: string, modelAnswer: string | null, studentAnswer: string): Promise<EmailExamFeedback> {
+  const fallback: EmailExamFeedback = {
+    score: Math.min(100, Math.max(0, studentAnswer.trim().length >= 40 ? 70 : 35)),
+    grammar: studentAnswer.trim() ? ["AI grading is not configured yet. Add OPENAI_API_KEY to enable detailed feedback."] : ["No email was submitted."],
+    tone: "Not evaluated yet.",
+    clarity: "Not evaluated yet.",
+    relevance: "Not evaluated yet.",
+    correctness: "Not evaluated yet.",
+    overallFeedback: "Configure OPENAI_API_KEY to enable AI evaluation.",
+  };
+
+  const apiKey = process.env.OPENAI_API_KEY?.trim();
+  if (!apiKey) return fallback;
+
+  const schema = {
+    name: "email_feedback",
+    strict: true,
+    schema: {
+      type: "object",
+      additionalProperties: false,
+      properties: {
+        score: { type: "number" },
+        grammar: { type: "array", items: { type: "string" } },
+        tone: { type: "string" },
+        clarity: { type: "string" },
+        relevance: { type: "string" },
+        correctness: { type: "string" },
+        overallFeedback: { type: "string" },
+      },
+      required: ["score", "grammar", "tone", "clarity", "relevance", "correctness", "overallFeedback"],
+    },
+  };
+
+  const response = await fetch("https://api.openai.com/v1/responses", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: process.env.OPENAI_MODEL ?? "gpt-4o-mini",
+      input: [
+        "You are grading an online email-writing exam.",
+        `Prompt: ${prompt}`,
+        modelAnswer ? `Reference answer: ${modelAnswer}` : "Reference answer: not provided.",
+        "Evaluate grammar, tone, clarity, relevance, and correctness against the task.",
+        "Return a fair 0-100 score and concise improvement feedback.",
+        `Student email:\n${studentAnswer}`,
+      ].join("\n\n"),
+      text: { format: { type: "json_schema", json_schema: schema } },
+    }),
+  });
+
+  if (!response.ok) return fallback;
+
+  const data = (await response.json()) as { output_text?: string };
+  try {
+    const parsed = JSON.parse(data.output_text ?? "") as EmailExamFeedback;
+    return {
+      score: Number.isFinite(Number(parsed.score)) ? Number(parsed.score) : fallback.score,
+      grammar: Array.isArray(parsed.grammar) ? parsed.grammar.map((item) => String(item)) : fallback.grammar,
+      tone: String(parsed.tone ?? fallback.tone),
+      clarity: String(parsed.clarity ?? fallback.clarity),
+      relevance: String(parsed.relevance ?? fallback.relevance),
+      correctness: String(parsed.correctness ?? fallback.correctness),
+      overallFeedback: String(parsed.overallFeedback ?? fallback.overallFeedback),
+    };
+  } catch {
+    return fallback;
+  }
 }
 
 async function fetchExamRows(code: string): Promise<Exam | undefined> {
@@ -713,4 +830,55 @@ export async function getStudentByToken(token: string | undefined): Promise<Stud
   const student = rows[0];
   if (!student) return undefined;
   return { id: student.id, username: student.username, displayName: student.display_name };
+}
+
+export async function createEmailExam(title: string, prompt: string, modelAnswer: string | null): Promise<{ code: string; title: string; prompt: string; modelAnswer: string | null; createdAt: string }> {
+  await ensureSchema();
+  const code = generateCode();
+  const createdAt = new Date();
+  await pool.query(
+    `INSERT INTO email_exams (code, title, prompt, model_answer, created_at)
+     VALUES (?, ?, ?, ?, ?)`,
+    [code, title.trim() || "Email Writing Assessment", normalizeText(prompt), modelAnswer ? normalizeText(modelAnswer) : null, toMysqlDateTime(createdAt)],
+  );
+  return { code, title: title.trim() || "Email Writing Assessment", prompt: normalizeText(prompt), modelAnswer: modelAnswer ? normalizeText(modelAnswer) : null, createdAt: createdAt.toISOString() };
+}
+
+export async function listEmailExams(): Promise<Array<{ code: string; title: string; prompt: string; createdAt: string }>> {
+  await ensureSchema();
+  const [rows] = await pool.query<mysql.RowDataPacket[] & EmailExamRow[]>(
+    "SELECT code, title, prompt, model_answer, created_at FROM email_exams ORDER BY created_at DESC",
+  );
+  return rows.map((row) => ({
+    code: row.code,
+    title: row.title,
+    prompt: row.prompt,
+    createdAt: new Date(row.created_at).toISOString(),
+  }));
+}
+
+export async function getEmailExam(code: string): Promise<{ code: string; title: string; prompt: string; modelAnswer: string | null; createdAt: string } | undefined> {
+  await ensureSchema();
+  const [rows] = await pool.query<mysql.RowDataPacket[] & EmailExamRow[]>(
+    "SELECT code, title, prompt, model_answer, created_at FROM email_exams WHERE code = ? LIMIT 1",
+    [code.toUpperCase()],
+  );
+  const row = rows[0];
+  if (!row) return undefined;
+  return { code: row.code, title: row.title, prompt: row.prompt, modelAnswer: row.model_answer, createdAt: new Date(row.created_at).toISOString() };
+}
+
+export async function submitEmailExam(code: string, studentName: string, studentAnswer: string): Promise<{ id: string; studentName: string; submittedAt: string; score: number; feedback: EmailExamFeedback } | undefined> {
+  const exam = await getEmailExam(code);
+  if (!exam) return undefined;
+  const feedback = await evaluateEmailAnswer(exam.prompt, exam.modelAnswer, studentAnswer);
+  const id = crypto.randomUUID();
+  const submittedAt = new Date();
+  await ensureSchema();
+  await pool.query(
+    `INSERT INTO email_exam_attempts (id, exam_code, student_name, student_answer, submitted_at, score, feedback_json)
+     VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    [id, code.toUpperCase(), studentName.trim() || "Anonymous Student", studentAnswer, toMysqlDateTime(submittedAt), feedback.score, JSON.stringify(feedback)],
+  );
+  return { id, studentName: studentName.trim() || "Anonymous Student", submittedAt: submittedAt.toISOString(), score: feedback.score, feedback };
 }
