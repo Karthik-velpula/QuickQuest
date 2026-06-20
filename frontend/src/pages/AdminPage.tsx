@@ -1,8 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { BrandHeader } from "../components/BrandHeader";
 import { clearAdminExamResults, createAdminExam, deleteAdminExam, getAdminExam, getAdminExams, loginAdmin, previewQuestionFile } from "../services/adminService";
-import { clearAdminEmailExamResults, createEmailExam, deleteAdminEmailExam, getAdminEmailExams } from "../services/emailExamService";
-import type { AdminExamListSummary, AdminExamSummary, EmailExamListSummary, Question } from "../types/exam";
+import type { AdminExamListSummary, AdminExamSummary, Question } from "../types/exam";
 
 export function AdminPage() {
   const [token, setToken] = useState("");
@@ -10,17 +9,12 @@ export function AdminPage() {
   const [password, setPassword] = useState("");
   const [title, setTitle] = useState("");
   const [answerKey, setAnswerKey] = useState("");
-  const [emailTitle, setEmailTitle] = useState("");
-  const [emailPrompt, setEmailPrompt] = useState("");
-  const [emailModelAnswer, setEmailModelAnswer] = useState("");
-  const [emailLink, setEmailLink] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [previewQuestions, setPreviewQuestions] = useState<Question[]>([]);
   const [createdCode, setCreatedCode] = useState("");
   const [lookupCode, setLookupCode] = useState("");
   const [examSummary, setExamSummary] = useState<AdminExamSummary | null>(null);
   const [createdTests, setCreatedTests] = useState<AdminExamListSummary[]>([]);
-  const [createdEmailTests, setCreatedEmailTests] = useState<EmailExamListSummary[]>([]);
   const [loading, setLoading] = useState(false);
   const [refreshingResults, setRefreshingResults] = useState(false);
   const [lastRefreshedAt, setLastRefreshedAt] = useState<string | null>(null);
@@ -55,7 +49,6 @@ export function AdminPage() {
       const adminToken = await loginAdmin(username, password);
       setToken(adminToken);
       setCreatedTests(await getAdminExams(adminToken));
-      setCreatedEmailTests(await getAdminEmailExams(adminToken));
     } catch (loginError) {
       setError(loginError instanceof Error ? loginError.message : "Login failed.");
     } finally {
@@ -78,25 +71,6 @@ export function AdminPage() {
       setCreatedTests(await getAdminExams(token));
     } catch (createError) {
       setError(createError instanceof Error ? createError.message : "Unable to create exam.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const createEmailAssessment = async () => {
-    if (!emailPrompt.trim()) {
-      setError("Enter an email prompt first.");
-      return;
-    }
-    setError("");
-    setLoading(true);
-    try {
-      const created = await createEmailExam(token, emailTitle || "Email Writing Assessment", emailPrompt, emailModelAnswer);
-      setEmailLink(`${window.location.origin}${created.examUrl}`);
-      setCreatedTests(await getAdminExams(token));
-      setCreatedEmailTests(await getAdminEmailExams(token));
-    } catch (createError) {
-      setError(createError instanceof Error ? createError.message : "Unable to create email exam.");
     } finally {
       setLoading(false);
     }
@@ -154,7 +128,6 @@ export function AdminPage() {
     setLoading(true);
     try {
       setCreatedTests(await getAdminExams(token));
-      setCreatedEmailTests(await getAdminEmailExams(token));
     } catch (refreshError) {
       setError(refreshError instanceof Error ? refreshError.message : "Unable to load created tests.");
     } finally {
@@ -210,35 +183,6 @@ export function AdminPage() {
     }
   };
 
-  const clearEmailResults = async (code: string) => {
-    if (!window.confirm(`Clear all results for email exam ${code}? The exam and prompt will stay, but student submissions will be removed.`)) return;
-    setError("");
-    setLoading(true);
-    try {
-      await clearAdminEmailExamResults(token, code);
-      setCreatedEmailTests(await getAdminEmailExams(token));
-    } catch (clearError) {
-      setError(clearError instanceof Error ? clearError.message : "Unable to clear email exam results.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const removeEmailExam = async (code: string) => {
-    if (!window.confirm(`Delete email exam ${code}? This will also delete its student submissions.`)) return;
-    setError("");
-    setLoading(true);
-    try {
-      await deleteAdminEmailExam(token, code);
-      setCreatedEmailTests((tests) => tests.filter((test) => test.code !== code));
-      if (emailLink.endsWith(`/email-exam/${code}`)) setEmailLink("");
-    } catch (deleteError) {
-      setError(deleteError instanceof Error ? deleteError.message : "Unable to delete email exam.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return (
     <div className="min-h-screen bg-canvas">
       <BrandHeader />
@@ -265,23 +209,6 @@ export function AdminPage() {
             </div>
           ) : (
             <div className="mt-8 grid gap-5">
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                <h3 className="text-lg font-bold text-navy">Create email exam link</h3>
-                <label className="mt-4 grid gap-2 text-sm font-semibold text-slate-700">
-                  Title
-                  <input className="rounded-lg border border-slate-300 px-4 py-3 font-normal" value={emailTitle} onChange={(event) => setEmailTitle(event.target.value)} placeholder="Email Writing Assessment" />
-                </label>
-                <label className="mt-4 grid gap-2 text-sm font-semibold text-slate-700">
-                  Email prompt
-                  <textarea className="min-h-32 rounded-lg border border-slate-300 px-4 py-3 font-normal" value={emailPrompt} onChange={(event) => setEmailPrompt(event.target.value)} placeholder="Write an email to your manager requesting leave..." />
-                </label>
-                <label className="mt-4 grid gap-2 text-sm font-semibold text-slate-700">
-                  Optional model answer
-                  <textarea className="min-h-28 rounded-lg border border-slate-300 px-4 py-3 font-normal" value={emailModelAnswer} onChange={(event) => setEmailModelAnswer(event.target.value)} placeholder="Optional sample answer for better evaluation" />
-                </label>
-                <button onClick={() => void createEmailAssessment()} className="mt-4 rounded-lg bg-navy px-5 py-3 font-bold text-white hover:bg-navy/90">{loading ? "Creating..." : "Create email exam link"}</button>
-                {emailLink && <a className="mt-3 block break-all text-sm font-semibold text-teal underline" href={emailLink}>{emailLink}</a>}
-              </div>
               <label className="grid gap-2 text-sm font-semibold text-slate-700">
                 Exam title
                 <input className="rounded-lg border border-slate-300 px-4 py-3 font-normal" value={title} onChange={(event) => setTitle(event.target.value)} />
@@ -388,48 +315,6 @@ export function AdminPage() {
               )}
             </div>
           )}
-
-          <div className="mt-8 border-t border-slate-200 pt-8">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-              <div>
-                <h2 className="text-2xl font-bold text-navy">Created email exams</h2>
-                <p className="mt-1 text-sm text-slate-500">Email-writing links appear separately here.</p>
-              </div>
-            </div>
-            {token && (
-              <div className="mt-5 grid gap-3">
-                {createdEmailTests.length === 0 ? (
-                  <p className="rounded-xl bg-slate-50 p-4 text-sm text-slate-600">No email exams created yet.</p>
-                ) : (
-                  createdEmailTests.map((test) => (
-                    <article key={test.code} className="rounded-xl border border-slate-200 p-4">
-                      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                        <div>
-                          <p className="font-bold text-navy">{test.title}</p>
-                          <p className="mt-1 text-xs text-slate-500">Code {test.code} · Email exam</p>
-                          <p className="mt-1 text-xs font-semibold text-slate-500">Created {formatDateTime(test.createdAt)}</p>
-                          <a className="mt-2 block break-all text-xs font-semibold text-teal underline" href={`${window.location.origin}/email-exam/${test.code}`}>
-                            {window.location.origin}/email-exam/{test.code}
-                          </a>
-                        </div>
-                        <div className="flex flex-wrap gap-2">
-                          <button onClick={() => window.open(`${window.location.origin}/email-exam/${test.code}`, "_blank")} className="rounded-lg bg-navy px-4 py-2 text-sm font-bold text-white">
-                            Open link
-                          </button>
-                          <button onClick={() => void clearEmailResults(test.code)} className="rounded-lg border border-amber-200 px-4 py-2 text-sm font-bold text-amber-700 hover:bg-amber-50">
-                            Clear results
-                          </button>
-                          <button onClick={() => void removeEmailExam(test.code)} className="rounded-lg border border-red-200 px-4 py-2 text-sm font-bold text-red-700 hover:bg-red-50">
-                            Delete
-                          </button>
-                        </div>
-                      </div>
-                    </article>
-                  ))
-                )}
-              </div>
-            )}
-          </div>
 
           <div className="mt-8 border-t border-slate-200 pt-8">
             <h2 className="text-2xl font-bold text-navy">Results</h2>

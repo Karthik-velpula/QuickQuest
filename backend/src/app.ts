@@ -8,7 +8,6 @@ import { getMysqlConfig } from "./env.js";
 import { pool } from "./services/examStore.js";
 import { adminRouter } from "./routes/adminRoutes.js";
 import { examRouter } from "./routes/examRoutes.js";
-import { emailExamRouter } from "./routes/emailExamRoutes.js";
 import { questionRouter } from "./routes/questionRoutes.js";
 import { studentRouter } from "./routes/studentRoutes.js";
 
@@ -43,7 +42,6 @@ app.get("/api/db-status", async (_request, response) => {
 });
 app.use("/api/admin", adminRouter);
 app.use("/api/exams", examRouter);
-app.use("/api/email-exams", emailExamRouter);
 app.use("/api/questions", questionRouter);
 app.use("/api/students", studentRouter);
 
