@@ -78,12 +78,10 @@ export function ExamPage({ questions, onComplete }: ExamPageProps) {
   }, [index, onComplete, question.id, questions.length]);
 
   const seconds = useQuestionTimer(index, goForward, phase === "normal" && !isReadingQuestion);
-  const choose = (option: string) => {
-    selectedRef.current = option;
-    setSelected(option);
+  const choose = (value: string) => {
+    selectedRef.current = value;
+    setSelected(value);
   };
-
-  const isTypedQuestion = Boolean(question.readingComprehension);
 
   useEffect(() => {
     if (!(question.readingComprehension || question.passage)) {
@@ -107,7 +105,7 @@ export function ExamPage({ questions, onComplete }: ExamPageProps) {
       <ProgressBar current={index + 1} total={questions.length} />
       <main className="grid flex-1 place-items-center px-4 py-6 sm:px-6 sm:py-10">
         <section className="w-full max-w-6xl rounded-2xl bg-white p-5 shadow-panel sm:p-8 md:p-12">
-          <p className="text-xs font-bold uppercase tracking-[0.2em] text-teal">Select one option</p>
+          <p className="text-xs font-bold uppercase tracking-[0.2em] text-teal">Type the answer in the blank</p>
           <p className="mt-3 w-fit rounded-full bg-teal/10 px-3 py-1 text-xs font-bold text-teal">Document Question {question.questionNumber ?? index + 1}</p>
           {phase === "reading" && isReadingQuestion ? (
             <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-6">
@@ -126,36 +124,25 @@ export function ExamPage({ questions, onComplete }: ExamPageProps) {
             <div className="mt-6 grid gap-6">
               <section>
                 <h2 className="text-xl font-semibold leading-relaxed text-navy sm:text-2xl md:text-3xl">{question.question}</h2>
-                {isTypedQuestion ? (
-                  <div className="mt-9">
-                    <label className="block text-sm font-semibold text-slate-600">Type your answer</label>
-                    <input
-                      type="text"
-                      value={selected ?? ""}
-                      onChange={(event) => choose(event.target.value)}
-                      placeholder="Enter your answer here"
-                      className="mt-3 w-full rounded-xl border-2 border-slate-200 px-4 py-4 text-base outline-none transition focus:border-teal"
-                    />
-                    <p className="mt-3 text-sm text-slate-500">Case does not matter. You can type the answer in upper or lower case.</p>
-                  </div>
-                ) : (
-                  <div className="mt-9 grid gap-4">
-                    {question.options.map((option, optionIndex) => (
-                      <label
-                        key={option}
-                        className={`flex cursor-pointer items-start gap-3 rounded-xl border-2 p-4 transition sm:items-center sm:gap-4 sm:p-5 ${
-                          selected === option ? "border-teal bg-teal/5" : "border-slate-200 hover:border-slate-300"
-                        }`}
-                      >
-                        <input type="radio" name={`question-${index}`} checked={selected === option} onChange={() => choose(option)} className="h-5 w-5 accent-teal" />
-                        <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-slate-100 text-sm font-bold text-slate-600">
-                          {String.fromCharCode(65 + optionIndex)}
-                        </span>
-                        <span className="text-base font-medium text-slate-700">{option}</span>
-                      </label>
-                    ))}
-                  </div>
-                )}
+                <div className="mt-9">
+                  <label className="block text-sm font-semibold text-slate-600">Type your answer</label>
+                  <input
+                    type="text"
+                    value={selected ?? ""}
+                    onChange={(event) => choose(event.target.value)}
+                    placeholder="Enter your answer here"
+                    className="mt-3 w-full rounded-xl border-2 border-slate-200 px-4 py-4 text-base outline-none transition focus:border-teal"
+                  />
+                  <p className="mt-3 text-sm text-slate-500">Case does not matter. You can type your answer in upper or lower case.</p>
+                </div>
+                <div className="mt-8 grid gap-3">
+                  {question.options.map((option, optionIndex) => (
+                    <div key={option} className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                      <span className="mr-2 font-bold text-slate-700">{String.fromCharCode(65 + optionIndex)}.</span>
+                      <span className="text-slate-700">{option}</span>
+                    </div>
+                  ))}
+                </div>
               </section>
             </div>
           )}
