@@ -61,7 +61,8 @@ export function ExamPage({ questions, onComplete }: ExamPageProps) {
     if (advancingRef.current) return;
     advancingRef.current = true;
 
-    const nextAnswers = [...answersRef.current, { questionId: question.id, selectedAnswer: selectedRef.current }];
+    const trimmedAnswer = selectedRef.current?.trim() ?? "";
+    const nextAnswers = [...answersRef.current, { questionId: question.id, selectedAnswer: trimmedAnswer ? trimmedAnswer : null }];
     answersRef.current = nextAnswers;
     if (index === questions.length - 1) {
       if (document.fullscreenElement) void document.exitFullscreen();
@@ -81,6 +82,8 @@ export function ExamPage({ questions, onComplete }: ExamPageProps) {
     selectedRef.current = option;
     setSelected(option);
   };
+
+  const isTypedQuestion = Boolean(question.readingComprehension);
 
   useEffect(() => {
     if (!(question.readingComprehension || question.passage)) {
@@ -122,28 +125,37 @@ export function ExamPage({ questions, onComplete }: ExamPageProps) {
           ) : (
             <div className="mt-6 grid gap-6">
               <section>
-                {isReadingQuestion && (
-                  <p className="mb-4 rounded-lg bg-teal/10 px-3 py-2 text-sm font-semibold text-teal">
-                    Reading question. Passage was shown before this question.
-                  </p>
-                )}
                 <h2 className="text-xl font-semibold leading-relaxed text-navy sm:text-2xl md:text-3xl">{question.question}</h2>
-                <div className="mt-9 grid gap-4">
-                  {question.options.map((option, optionIndex) => (
-                    <label
-                      key={option}
-                      className={`flex cursor-pointer items-start gap-3 rounded-xl border-2 p-4 transition sm:items-center sm:gap-4 sm:p-5 ${
-                        selected === option ? "border-teal bg-teal/5" : "border-slate-200 hover:border-slate-300"
-                      }`}
-                    >
-                      <input type="radio" name={`question-${index}`} checked={selected === option} onChange={() => choose(option)} className="h-5 w-5 accent-teal" />
-                      <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-slate-100 text-sm font-bold text-slate-600">
-                        {String.fromCharCode(65 + optionIndex)}
-                      </span>
-                      <span className="text-base font-medium text-slate-700">{option}</span>
-                    </label>
-                  ))}
-                </div>
+                {isTypedQuestion ? (
+                  <div className="mt-9">
+                    <label className="block text-sm font-semibold text-slate-600">Type your answer</label>
+                    <input
+                      type="text"
+                      value={selected ?? ""}
+                      onChange={(event) => choose(event.target.value)}
+                      placeholder="Enter your answer here"
+                      className="mt-3 w-full rounded-xl border-2 border-slate-200 px-4 py-4 text-base outline-none transition focus:border-teal"
+                    />
+                    <p className="mt-3 text-sm text-slate-500">Case does not matter. You can type the answer in upper or lower case.</p>
+                  </div>
+                ) : (
+                  <div className="mt-9 grid gap-4">
+                    {question.options.map((option, optionIndex) => (
+                      <label
+                        key={option}
+                        className={`flex cursor-pointer items-start gap-3 rounded-xl border-2 p-4 transition sm:items-center sm:gap-4 sm:p-5 ${
+                          selected === option ? "border-teal bg-teal/5" : "border-slate-200 hover:border-slate-300"
+                        }`}
+                      >
+                        <input type="radio" name={`question-${index}`} checked={selected === option} onChange={() => choose(option)} className="h-5 w-5 accent-teal" />
+                        <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-slate-100 text-sm font-bold text-slate-600">
+                          {String.fromCharCode(65 + optionIndex)}
+                        </span>
+                        <span className="text-base font-medium text-slate-700">{option}</span>
+                      </label>
+                    ))}
+                  </div>
+                )}
               </section>
             </div>
           )}

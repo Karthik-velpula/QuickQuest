@@ -2,6 +2,10 @@ import type { Request, Response } from "express";
 import { getExamQuestions, getPublicExam, getStudentByToken, listPublicExams, submitAttempt } from "../services/examStore.js";
 import type { SubmittedAnswer } from "../types/exam.js";
 
+function normalizeResponse(text: string | null | undefined): string {
+  return String(text ?? "").trim().toLowerCase().replace(/\s+/g, " ");
+}
+
 export async function listExamsForStudents(_request: Request, response: Response): Promise<void> {
   response.json({ exams: await listPublicExams() });
 }
@@ -37,11 +41,17 @@ export async function submitStudentAttempt(request: Request, response: Response)
       questionId: question.id,
       questionNumber: question.questionNumber,
       passage: question.passage,
+      readingComprehension: question.readingComprehension,
       question: question.question,
       options: question.options,
       selectedAnswer,
       correctAnswer: question.correctAnswer,
-      status: selectedAnswer === null ? "unanswered" : selectedAnswer === question.correctAnswer ? "correct" : "wrong",
+      status:
+        selectedAnswer === null
+          ? "unanswered"
+          : normalizeResponse(selectedAnswer) === normalizeResponse(question.correctAnswer)
+            ? "correct"
+            : "wrong",
     };
   }) ?? [];
 

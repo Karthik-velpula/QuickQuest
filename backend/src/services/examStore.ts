@@ -178,6 +178,10 @@ function toMysqlDateTime(date: Date): string {
   return date.toISOString().slice(0, 23).replace("T", " ");
 }
 
+function normalizeResponse(text: string | null | undefined): string {
+  return String(text ?? "").trim().toLowerCase().replace(/\s+/g, " ");
+}
+
 function normalizeUsername(username: string): string {
   return username.trim().toLowerCase();
 }
@@ -485,7 +489,7 @@ export async function submitAttempt(code: string, studentName: string, answers: 
   const attempted = normalizedAnswers.filter((answer) => answer.selectedAnswer !== null).length;
   const correct = normalizedAnswers.filter((answer) => {
     const question = exam.questions.find((item) => item.id === answer.questionId);
-    return question?.correctAnswer === answer.selectedAnswer;
+    return normalizeResponse(question?.correctAnswer) === normalizeResponse(answer.selectedAnswer);
   }).length;
   const total = exam.questions.length;
   const attempt: Attempt = {

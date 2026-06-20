@@ -56,6 +56,7 @@ export interface QuestionReview {
   questionId: string;
   questionNumber?: number;
   passage?: string;
+  readingComprehension?: boolean;
   question: string;
   options: string[];
   selectedAnswer: string | null;

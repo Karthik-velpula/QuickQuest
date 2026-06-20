@@ -67,24 +67,37 @@ export function StudentResultPage({ result, review, onDone }: StudentResultPageP
                       {item.status}
                     </span>
                   </div>
-                  <div className="mt-4 grid gap-2 text-sm">
-                    {item.options.map((option, optionIndex) => {
-                      const isCorrect = option === item.correctAnswer;
-                      const isSelected = option === item.selectedAnswer;
-                      return (
-                        <div
-                          key={option}
-                          className={`rounded-lg border px-4 py-3 ${
-                            isCorrect ? "border-teal bg-teal/10 text-teal" : isSelected ? "border-red-200 bg-red-50 text-red-700" : "border-slate-200 text-slate-600"
-                          }`}
-                        >
-                          <span className="font-bold">{String.fromCharCode(65 + optionIndex)}.</span> {option}
-                          {isCorrect && <span className="ml-2 font-bold">(Correct answer)</span>}
-                          {isSelected && !isCorrect && <span className="ml-2 font-bold">(Your answer)</span>}
-                        </div>
-                      );
-                    })}
-                  </div>
+                  {item.readingComprehension ? (
+                    <div className="mt-4 grid gap-3 text-sm">
+                      <div className="rounded-lg border border-teal bg-teal/10 px-4 py-3 text-teal">
+                        <p className="text-xs font-bold uppercase tracking-wider">Your answer</p>
+                        <p className="mt-1 text-base font-semibold">{item.selectedAnswer ?? "Unanswered"}</p>
+                      </div>
+                      <div className="rounded-lg border border-slate-200 px-4 py-3 text-slate-700">
+                        <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Correct answer</p>
+                        <p className="mt-1 text-base font-semibold">{item.correctAnswer}</p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="mt-4 grid gap-2 text-sm">
+                      {item.options.map((option, optionIndex) => {
+                        const isCorrect = option === item.correctAnswer;
+                        const isSelected = option === item.selectedAnswer;
+                        return (
+                          <div
+                            key={option}
+                            className={`rounded-lg border px-4 py-3 ${
+                              isCorrect ? "border-teal bg-teal/10 text-teal" : isSelected ? "border-red-200 bg-red-50 text-red-700" : "border-slate-200 text-slate-600"
+                            }`}
+                          >
+                            <span className="font-bold">{String.fromCharCode(65 + optionIndex)}.</span> {option}
+                            {isCorrect && <span className="ml-2 font-bold">(Correct answer)</span>}
+                            {isSelected && !isCorrect && <span className="ml-2 font-bold">(Your answer)</span>}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                   {item.selectedAnswer === null && <p className="mt-3 text-sm font-semibold text-amber-700">You did not answer this question.</p>}
                 </article>
               ))}
