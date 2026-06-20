@@ -65,3 +65,11 @@ export async function deleteAdminExam(token: string, code: string): Promise<void
   });
   await readJson<{ message: string }>(response);
 }
+
+export async function clearAdminExamResults(token: string, code: string): Promise<void> {
+  const response = await fetch(`${API}/admin/exams/${code}/results`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  await readJson<{ message: string }>(response);
+}

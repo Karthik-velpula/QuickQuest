@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { BrandHeader } from "../components/BrandHeader";
-import { createAdminExam, deleteAdminExam, getAdminExam, getAdminExams, loginAdmin, previewQuestionFile } from "../services/adminService";
+import { clearAdminExamResults, createAdminExam, deleteAdminExam, getAdminExam, getAdminExams, loginAdmin, previewQuestionFile } from "../services/adminService";
 import type { AdminExamListSummary, AdminExamSummary, Question } from "../types/exam";
 
 export function AdminPage() {
@@ -164,6 +164,24 @@ export function AdminPage() {
     }
   };
 
+  const clearResults = async (code: string) => {
+    if (!window.confirm(`Clear all results for exam ${code}? The exam and questions will stay, but student attempts will be removed.`)) return;
+    setError("");
+    setLoading(true);
+    try {
+      await clearAdminExamResults(token, code);
+      if (lookupCode === code) {
+        setExamSummary(await getAdminExam(token, code));
+        setLastRefreshedAt(new Date().toLocaleTimeString());
+      }
+      setCreatedTests(await getAdminExams(token));
+    } catch (clearError) {
+      setError(clearError instanceof Error ? clearError.message : "Unable to clear results.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-canvas">
       <BrandHeader />
@@ -287,6 +305,7 @@ export function AdminPage() {
                       </div>
                       <div className="flex flex-wrap gap-2">
                         <button onClick={() => void showResults(test.code)} className="rounded-lg bg-navy px-4 py-2 text-sm font-bold text-white">Show results</button>
+                        <button onClick={() => void clearResults(test.code)} className="rounded-lg border border-amber-200 px-4 py-2 text-sm font-bold text-amber-700 hover:bg-amber-50">Clear results</button>
                         <button onClick={() => void removeExam(test.code)} className="rounded-lg border border-red-200 px-4 py-2 text-sm font-bold text-red-700 hover:bg-red-50">Delete</button>
                       </div>
                     </div>

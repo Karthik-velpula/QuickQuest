@@ -466,6 +466,31 @@ export async function deleteExam(code: string): Promise<boolean> {
   }
 }
 
+export async function clearExamResults(code: string): Promise<boolean> {
+  await ensureSchema();
+  const examCode = code.toUpperCase();
+  const connection = await pool.getConnection();
+  try {
+    await connection.beginTransaction();
+    const [attemptRows] = await connection.query<mysql.RowDataPacket[] & Array<{ id: string }>>(
+      "SELECT id FROM exam_attempts WHERE exam_code = ?",
+      [examCode],
+    );
+
+    for (const attempt of attemptRows) {
+      await connection.query("DELETE FROM attempt_answers WHERE attempt_id = ?", [attempt.id]);
+    }
+    const [result] = await connection.query<mysql.ResultSetHeader>("DELETE FROM exam_attempts WHERE exam_code = ?", [examCode]);
+    await connection.commit();
+    return result.affectedRows > 0 || attemptRows.length > 0;
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
+}
+
 export async function getPublicExam(code: string): Promise<{ code: string; title: string; questions: PublicQuestion[] } | undefined> {
   const exam = await fetchExamRows(code);
   if (!exam) return undefined;

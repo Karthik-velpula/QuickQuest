@@ -1,6 +1,6 @@
 import type { Request, Response } from "express";
 import { login } from "../services/authService.js";
-import { createExam, deleteExam, getExam, listAdminExams } from "../services/examStore.js";
+import { clearExamResults, createExam, deleteExam, getExam, listAdminExams } from "../services/examStore.js";
 import { extractText, hasValidSignature } from "../services/fileTextExtractor.js";
 import { extractQuestions } from "../services/questionExtractor.js";
 
@@ -94,4 +94,13 @@ export async function deleteAdminExam(request: Request, response: Response): Pro
     return;
   }
   response.json({ message: "Exam deleted." });
+}
+
+export async function clearAdminExamResults(request: Request, response: Response): Promise<void> {
+  const cleared = await clearExamResults(String(request.params.code ?? ""));
+  if (!cleared) {
+    response.status(404).json({ message: "Exam not found or has no results." });
+    return;
+  }
+  response.json({ message: "Exam results cleared." });
 }
