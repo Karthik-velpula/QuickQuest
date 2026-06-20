@@ -114,7 +114,6 @@ export function AdminPage() {
     setToken("");
     setPassword("");
     setCreatedTests([]);
-    setCreatedEmailTests([]);
     setExamSummary(null);
     setCreatedCode("");
     setLookupCode("");
