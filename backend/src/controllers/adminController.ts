@@ -154,3 +154,43 @@ export async function downloadAdminExamPdf(request: Request, response: Response)
 
   doc.end();
 }
+
+export async function downloadAdminQuestionPaperPdf(request: Request, response: Response): Promise<void> {
+  const exam = await getExam(String(request.params.code ?? ""));
+  if (!exam) {
+    response.status(404).json({ message: "Exam not found or expired." });
+    return;
+  }
+
+  response.setHeader("Content-Type", "application/pdf");
+  response.setHeader(
+    "Content-Disposition",
+    `attachment; filename="${exam.title.replace(/[^a-z0-9]+/gi, "_").replace(/^_+|_+$/g, "") || "question_paper"}_question_paper.pdf"`,
+  );
+
+  const doc = new PDFDocument({ margin: 40, size: "A4" });
+  doc.pipe(response);
+
+  doc.fontSize(18).fillColor("#0f172a").text(exam.title, { align: "left" });
+  doc.moveDown(0.3);
+  doc.fontSize(10).fillColor("#475569").text(`Code: ${exam.code}`);
+  doc.text(`Question Paper`);
+  doc.moveDown(1);
+
+  exam.questions.forEach((question, index) => {
+    if (doc.y > 740) doc.addPage();
+    doc.fontSize(11).fillColor("#0f172a").text(`Q${index + 1}. ${question.question}`);
+    doc.moveDown(0.2);
+    question.options.forEach((option, optionIndex) => {
+      if (doc.y > 760) doc.addPage();
+      doc.fontSize(10).fillColor("#334155").text(`${String.fromCharCode(65 + optionIndex)}. ${option}`, { indent: 12 });
+    });
+    if (question.passage) {
+      doc.moveDown(0.2);
+      doc.fontSize(9).fillColor("#64748b").text(`Passage: ${question.passage}`, { indent: 12 });
+    }
+    doc.moveDown(0.6);
+  });
+
+  doc.end();
+}

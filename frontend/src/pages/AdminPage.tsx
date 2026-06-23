@@ -157,7 +157,7 @@ export function AdminPage() {
     setError("");
     setLoading(true);
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL ?? "http://localhost:4000"}/api/admin/exams/${code}/pdf`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL ?? "http://localhost:4000"}/api/admin/exams/${code}/question-paper.pdf`, {
         headers: { Authorization: `Bearer ${adminToken}` },
       });
       if (!response.ok) {
@@ -167,7 +167,7 @@ export function AdminPage() {
       const objectUrl = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = objectUrl;
-      link.download = `${code}_results.pdf`;
+      link.download = `${code}_question_paper.pdf`;
       document.body.appendChild(link);
       link.click();
       link.remove();
@@ -337,7 +337,7 @@ export function AdminPage() {
                       </div>
                       <div className="flex flex-wrap gap-2">
                         <button onClick={() => void showResults(test.code)} className="rounded-lg bg-navy px-4 py-2 text-sm font-bold text-white">Show results</button>
-                        <button onClick={() => void downloadResultsPdf(test.code)} className="rounded-lg border border-teal px-4 py-2 text-sm font-bold text-teal hover:bg-teal/10">Download PDF</button>
+                        <button onClick={() => void downloadResultsPdf(test.code)} className="rounded-lg border border-teal px-4 py-2 text-sm font-bold text-teal hover:bg-teal/10">Download Question Paper PDF</button>
                         <button onClick={() => void clearResults(test.code)} className="rounded-lg border border-amber-200 px-4 py-2 text-sm font-bold text-amber-700 hover:bg-amber-50">Clear results</button>
                         <button onClick={() => void removeExam(test.code)} className="rounded-lg border border-red-200 px-4 py-2 text-sm font-bold text-red-700 hover:bg-red-50">Delete</button>
                       </div>

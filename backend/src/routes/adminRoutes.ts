@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { adminLogin, clearAdminExamResults, createExamFromUpload, deleteAdminExam, downloadAdminExamPdf, getAdminExam, listAdminCreatedExams, previewQuestionsFromUpload } from "../controllers/adminController.js";
+import { adminLogin, clearAdminExamResults, createExamFromUpload, deleteAdminExam, downloadAdminExamPdf, downloadAdminQuestionPaperPdf, getAdminExam, listAdminCreatedExams, previewQuestionsFromUpload } from "../controllers/adminController.js";
 import { requireAdmin } from "../middleware/adminAuth.js";
 import { upload } from "../middleware/upload.js";
 
@@ -11,5 +11,6 @@ adminRouter.post("/exams", requireAdmin, upload.single("file"), createExamFromUp
 adminRouter.get("/exams", requireAdmin, listAdminCreatedExams);
 adminRouter.get("/exams/:code", requireAdmin, getAdminExam);
 adminRouter.get("/exams/:code/pdf", requireAdmin, downloadAdminExamPdf);
+adminRouter.get("/exams/:code/question-paper.pdf", requireAdmin, downloadAdminQuestionPaperPdf);
 adminRouter.delete("/exams/:code/results", requireAdmin, clearAdminExamResults);
 adminRouter.delete("/exams/:code", requireAdmin, deleteAdminExam);
