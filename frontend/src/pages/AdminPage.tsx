@@ -147,6 +147,84 @@ export function AdminPage() {
     }
   };
 
+  const downloadResultsPdf = async (code: string) => {
+    setLookupCode(code);
+    setError("");
+    setLoading(true);
+    try {
+      const summary = await getAdminExam(token, code);
+      const html = `
+        <!doctype html>
+        <html>
+          <head>
+            <meta charset="utf-8" />
+            <title>${summary.title} Results</title>
+            <style>
+              body { font-family: Arial, sans-serif; padding: 32px; color: #1f2937; }
+              h1 { margin: 0 0 8px; color: #0f172a; }
+              .meta { color: #64748b; margin-bottom: 24px; }
+              table { width: 100%; border-collapse: collapse; margin-top: 16px; }
+              th, td { border-bottom: 1px solid #e2e8f0; padding: 10px 8px; text-align: left; font-size: 14px; }
+              th { background: #f8fafc; font-size: 12px; text-transform: uppercase; letter-spacing: .08em; }
+              .high { color: #0f766e; font-weight: 700; }
+              .low { color: #dc2626; font-weight: 700; }
+            </style>
+          </head>
+          <body>
+            <h1>${summary.title}</h1>
+            <div class="meta">Code: ${summary.code} · Questions: ${summary.questionCount} · Attempts: ${summary.attempts.length} · Created: ${formatDateTime(createdTests.find((test) => test.code === summary.code)?.createdAt ?? new Date().toISOString())}</div>
+            <table>
+              <thead>
+                <tr>
+                  <th>Rank</th>
+                  <th>Student</th>
+                  <th>Attempted</th>
+                  <th>Correct</th>
+                  <th>Wrong</th>
+                  <th>Score</th>
+                  <th>Submitted</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${summary.attempts
+                  .map(
+                    (attempt) => `
+                      <tr>
+                        <td>#${attempt.rank ?? "-"}</td>
+                        <td>${attempt.studentName}</td>
+                        <td>${attempt.attempted}/${attempt.total}</td>
+                        <td>${attempt.correct}</td>
+                        <td>${attempt.incorrect}</td>
+                        <td class="${attempt.percentage < 50 ? "low" : "high"}">${attempt.percentage}%</td>
+                        <td>${new Date(attempt.submittedAt).toLocaleString()}</td>
+                      </tr>`,
+                  )
+                  .join("")}
+              </tbody>
+            </table>
+            <script>
+              window.onload = () => {
+                window.print();
+                setTimeout(() => window.close(), 250);
+              };
+            </script>
+          </body>
+        </html>`;
+      const printWindow = window.open("", "_blank", "noopener,noreferrer,width=1200,height=900");
+      if (!printWindow) {
+        setError("Popup blocked. Allow popups to download the PDF.");
+        return;
+      }
+      printWindow.document.open();
+      printWindow.document.write(html);
+      printWindow.document.close();
+    } catch (loadError) {
+      setError(loadError instanceof Error ? loadError.message : "Unable to prepare PDF.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const removeExam = async (code: string) => {
     if (!window.confirm(`Delete exam ${code}? This will also delete its questions and results.`)) return;
     setError("");
@@ -305,6 +383,7 @@ export function AdminPage() {
                       </div>
                       <div className="flex flex-wrap gap-2">
                         <button onClick={() => void showResults(test.code)} className="rounded-lg bg-navy px-4 py-2 text-sm font-bold text-white">Show results</button>
+                        <button onClick={() => void downloadResultsPdf(test.code)} className="rounded-lg border border-teal px-4 py-2 text-sm font-bold text-teal hover:bg-teal/10">Download PDF</button>
                         <button onClick={() => void clearResults(test.code)} className="rounded-lg border border-amber-200 px-4 py-2 text-sm font-bold text-amber-700 hover:bg-amber-50">Clear results</button>
                         <button onClick={() => void removeExam(test.code)} className="rounded-lg border border-red-200 px-4 py-2 text-sm font-bold text-red-700 hover:bg-red-50">Delete</button>
                       </div>
