@@ -148,76 +148,30 @@ export function AdminPage() {
   };
 
   const downloadResultsPdf = async (code: string) => {
+    const adminToken = token;
+    if (!adminToken) {
+      setError("Please login as admin first.");
+      return;
+    }
     setLookupCode(code);
     setError("");
     setLoading(true);
     try {
-      const summary = await getAdminExam(token, code);
-      const html = `
-        <!doctype html>
-        <html>
-          <head>
-            <meta charset="utf-8" />
-            <title>${summary.title} Results</title>
-            <style>
-              body { font-family: Arial, sans-serif; padding: 32px; color: #1f2937; }
-              h1 { margin: 0 0 8px; color: #0f172a; }
-              .meta { color: #64748b; margin-bottom: 24px; }
-              table { width: 100%; border-collapse: collapse; margin-top: 16px; }
-              th, td { border-bottom: 1px solid #e2e8f0; padding: 10px 8px; text-align: left; font-size: 14px; }
-              th { background: #f8fafc; font-size: 12px; text-transform: uppercase; letter-spacing: .08em; }
-              .high { color: #0f766e; font-weight: 700; }
-              .low { color: #dc2626; font-weight: 700; }
-            </style>
-          </head>
-          <body>
-            <h1>${summary.title}</h1>
-            <div class="meta">Code: ${summary.code} · Questions: ${summary.questionCount} · Attempts: ${summary.attempts.length} · Created: ${formatDateTime(createdTests.find((test) => test.code === summary.code)?.createdAt ?? new Date().toISOString())}</div>
-            <table>
-              <thead>
-                <tr>
-                  <th>Rank</th>
-                  <th>Student</th>
-                  <th>Attempted</th>
-                  <th>Correct</th>
-                  <th>Wrong</th>
-                  <th>Score</th>
-                  <th>Submitted</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${summary.attempts
-                  .map(
-                    (attempt) => `
-                      <tr>
-                        <td>#${attempt.rank ?? "-"}</td>
-                        <td>${attempt.studentName}</td>
-                        <td>${attempt.attempted}/${attempt.total}</td>
-                        <td>${attempt.correct}</td>
-                        <td>${attempt.incorrect}</td>
-                        <td class="${attempt.percentage < 50 ? "low" : "high"}">${attempt.percentage}%</td>
-                        <td>${new Date(attempt.submittedAt).toLocaleString()}</td>
-                      </tr>`,
-                  )
-                  .join("")}
-              </tbody>
-            </table>
-            <script>
-              window.onload = () => {
-                window.print();
-                setTimeout(() => window.close(), 250);
-              };
-            </script>
-          </body>
-        </html>`;
-      const printWindow = window.open("", "_blank", "noopener,noreferrer,width=1200,height=900");
-      if (!printWindow) {
-        setError("Popup blocked. Allow popups to download the PDF.");
-        return;
+      const response = await fetch(`${import.meta.env.VITE_API_URL ?? "http://localhost:4000"}/api/admin/exams/${code}/pdf`, {
+        headers: { Authorization: `Bearer ${adminToken}` },
+      });
+      if (!response.ok) {
+        throw new Error(await response.text());
       }
-      printWindow.document.open();
-      printWindow.document.write(html);
-      printWindow.document.close();
+      const blob = await response.blob();
+      const objectUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = objectUrl;
+      link.download = `${code}_results.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(objectUrl);
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : "Unable to prepare PDF.");
     } finally {
