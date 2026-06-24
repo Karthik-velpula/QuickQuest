@@ -104,7 +104,7 @@ export function ExamPage({ questions, onComplete }: ExamPageProps) {
       </header>
       <ProgressBar current={index + 1} total={questions.length} />
       <main className="grid flex-1 place-items-center px-4 py-6 sm:px-6 sm:py-10">
-        <section className="w-full max-w-6xl rounded-2xl bg-white p-5 shadow-panel sm:p-8 md:p-12">
+        <section className="w-full max-w-6xl rounded-2xl bg-white p-5 shadow-panel sm:p-8 md:p-12 select-none">
           <p className="text-xs font-bold uppercase tracking-[0.2em] text-teal">Type the answer in the blank</p>
           <p className="mt-3 w-fit rounded-full bg-teal/10 px-3 py-1 text-xs font-bold text-teal">Document Question {question.questionNumber ?? index + 1}</p>
           {phase === "reading" && isReadingQuestion ? (
@@ -130,6 +130,9 @@ export function ExamPage({ questions, onComplete }: ExamPageProps) {
                     type="text"
                     value={selected ?? ""}
                     onChange={(event) => choose(event.target.value)}
+                    onPaste={(event) => event.preventDefault()}
+                    onCopy={(event) => event.preventDefault()}
+                    onCut={(event) => event.preventDefault()}
                     placeholder="Enter your answer here"
                     className="mt-3 w-full rounded-xl border-2 border-slate-200 px-4 py-4 text-base outline-none transition focus:border-teal"
                   />

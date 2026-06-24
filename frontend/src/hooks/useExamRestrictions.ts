@@ -17,14 +17,29 @@ export function useExamRestrictions(active: boolean) {
         event.preventDefault();
       }
     };
+    const preventClipboard = (event: Event) => {
+      event.preventDefault();
+    };
 
     window.addEventListener("popstate", blockBack);
     document.addEventListener("fullscreenchange", handleFullscreen);
     window.addEventListener("keydown", preventKeys);
+    document.addEventListener("copy", preventClipboard);
+    document.addEventListener("cut", preventClipboard);
+    document.addEventListener("paste", preventClipboard);
+    document.addEventListener("contextmenu", preventClipboard);
+    document.addEventListener("selectstart", preventClipboard);
+    document.addEventListener("dragstart", preventClipboard);
     return () => {
       window.removeEventListener("popstate", blockBack);
       document.removeEventListener("fullscreenchange", handleFullscreen);
       window.removeEventListener("keydown", preventKeys);
+      document.removeEventListener("copy", preventClipboard);
+      document.removeEventListener("cut", preventClipboard);
+      document.removeEventListener("paste", preventClipboard);
+      document.removeEventListener("contextmenu", preventClipboard);
+      document.removeEventListener("selectstart", preventClipboard);
+      document.removeEventListener("dragstart", preventClipboard);
     };
   }, [active]);
 
