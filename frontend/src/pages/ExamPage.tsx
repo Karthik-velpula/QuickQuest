@@ -105,7 +105,7 @@ export function ExamPage({ questions, onComplete }: ExamPageProps) {
       <ProgressBar current={index + 1} total={questions.length} />
       <main className="grid flex-1 place-items-center px-4 py-6 sm:px-6 sm:py-10">
         <section className="w-full max-w-6xl rounded-2xl bg-white p-5 shadow-panel sm:p-8 md:p-12 select-none">
-          <p className="text-xs font-bold uppercase tracking-[0.2em] text-teal">Type the answer in the blank</p>
+          <p className="text-xs font-bold uppercase tracking-[0.2em] text-teal">Select the correct option</p>
           <p className="mt-3 w-fit rounded-full bg-teal/10 px-3 py-1 text-xs font-bold text-teal">Document Question {question.questionNumber ?? index + 1}</p>
           {phase === "reading" && isReadingQuestion ? (
             <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-6">
@@ -125,26 +125,29 @@ export function ExamPage({ questions, onComplete }: ExamPageProps) {
               <section>
                 <h2 className="text-xl font-semibold leading-relaxed text-navy sm:text-2xl md:text-3xl">{question.question}</h2>
                 <div className="mt-9">
-                  <label className="block text-sm font-semibold text-slate-600">Type your answer</label>
-                  <input
-                    type="text"
-                    value={selected ?? ""}
-                    onChange={(event) => choose(event.target.value)}
-                    onPaste={(event) => event.preventDefault()}
-                    onCopy={(event) => event.preventDefault()}
-                    onCut={(event) => event.preventDefault()}
-                    placeholder="Enter your answer here"
-                    className="mt-3 w-full rounded-xl border-2 border-slate-200 px-4 py-4 text-base outline-none transition focus:border-teal"
-                  />
-                  <p className="mt-3 text-sm text-slate-500">Case does not matter. You can type your answer in upper or lower case.</p>
+                  <p className="block text-sm font-semibold text-slate-600">Choose one option</p>
                 </div>
                 <div className="mt-8 grid gap-3">
-                  {question.options.map((option, optionIndex) => (
-                    <div key={option} className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                      <span className="mr-2 font-bold text-slate-700">{String.fromCharCode(65 + optionIndex)}.</span>
-                      <span className="text-slate-700">{option}</span>
-                    </div>
-                  ))}
+                  {question.options.map((option, optionIndex) => {
+                    const letter = String.fromCharCode(65 + optionIndex);
+                    const isChecked = selected === option;
+                    return (
+                      <label
+                        key={option}
+                        className={`flex cursor-pointer items-start gap-3 rounded-xl border p-4 transition ${isChecked ? "border-teal bg-teal/5" : "border-slate-200 bg-slate-50 hover:border-teal/40"}`}
+                      >
+                        <input
+                          type="radio"
+                          name={`question-${question.id}`}
+                          className="mt-1 h-4 w-4 accent-teal"
+                          checked={isChecked}
+                          onChange={() => choose(option)}
+                        />
+                        <span className="font-bold text-slate-700">{letter}.</span>
+                        <span className="text-slate-700">{option}</span>
+                      </label>
+                    );
+                  })}
                 </div>
               </section>
             </div>
