@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-export const QUESTION_SECONDS = 30;
+export const QUESTION_SECONDS = 25;
 
 export function useQuestionTimer(questionIndex: number, onExpire: () => void, active = true) {
   const [secondsLeft, setSecondsLeft] = useState(QUESTION_SECONDS);
